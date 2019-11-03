@@ -1,4 +1,5 @@
-﻿using Microsoft.Xna.Framework;
+﻿using Lidgren.Network;
+using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 
@@ -11,11 +12,15 @@ namespace MultiplayerGame
     {
         GraphicsDeviceManager graphics;
         SpriteBatch spriteBatch;
+        private NetworkConnection _networkConnection;
+        private Color _color; //For test
 
         public Game1()
         {
             graphics = new GraphicsDeviceManager(this);
             Content.RootDirectory = "Content";
+            _networkConnection = new NetworkConnection();
+            _color = Color.CornflowerBlue;
         }
 
         /// <summary>
@@ -28,6 +33,14 @@ namespace MultiplayerGame
         {
             // TODO: Add your initialization logic here
 
+            if (_networkConnection.Start())
+            {
+                _color = Color.Green;
+            }
+            else
+            {
+                _color = Color.Red;
+            }
             base.Initialize();
         }
 
@@ -61,7 +74,7 @@ namespace MultiplayerGame
         {
             if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed || Keyboard.GetState().IsKeyDown(Keys.Escape))
                 Exit();
-
+            _color = _networkConnection.Status == NetConnectionStatus.Connected ? Color.Green : Color.Red;
             // TODO: Add your update logic here
 
             base.Update(gameTime);
@@ -73,7 +86,7 @@ namespace MultiplayerGame
         /// <param name="gameTime">Provides a snapshot of timing values.</param>
         protected override void Draw(GameTime gameTime)
         {
-            GraphicsDevice.Clear(Color.CornflowerBlue);
+            GraphicsDevice.Clear(_color);
 
             // TODO: Add your drawing code here
 
