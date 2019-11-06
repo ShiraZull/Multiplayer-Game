@@ -32,7 +32,7 @@ namespace MultiplayerGame
         protected override void Initialize()
         {
             // TODO: Add your initialization logic here
-
+            // Starting a network connection to the server and checks if it is connected.
             if (_networkConnection.Start())
             {
                 _color = Color.Green;
@@ -74,6 +74,8 @@ namespace MultiplayerGame
         {
             if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed || Keyboard.GetState().IsKeyDown(Keys.Escape))
                 Exit();
+
+            // An extra check for network connectivity after it actually been connected to the server.
             _color = _networkConnection.Status == NetConnectionStatus.Connected ? Color.Green : Color.Red;
             // TODO: Add your update logic here
 

@@ -65,8 +65,12 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\MultiplayerGameLibrary\MultiplayerGameLibrary.csproj">
-      <Project>{BAC1B03E-1ED3-4A28-905C-7544B092FAC1}</Project>
+      <Project>{bac1b03e-1ed3-4a28-905c-7544b092fac1}</Project>
       <Name>MultiplayerGameLibrary</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\MultiplayerGameServer\MultiplayerGameServer.csproj">
+      <Project>{f241f291-7642-49ef-93fe-c4484134e99f}</Project>
+      <Name>MultiplayerGameServer</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

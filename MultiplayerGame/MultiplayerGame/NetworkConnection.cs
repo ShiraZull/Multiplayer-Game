@@ -10,19 +10,30 @@ namespace MultiplayerGame
 {
     class NetworkConnection
     {
+        // A NetPeer that is used for a client-server communiction
         private NetClient _client;
 
+        // A memorycell for storing the clients status to the server
         public NetConnectionStatus Status => _client.ConnectionStatus;
 
+        // When function starts, then...
         public bool Start()
         {
-            NetworkLoginInformation loginInformation = new NetworkLoginInformation() { Name = "RandomName" };
+            // Store your username as the string sugests
+            NetworkLoginInformation loginInformation = new NetworkLoginInformation() { Name = "Julius" };
+            // Makes the client configured to search for "networkGame" (like a key)
             _client = new NetClient(new NetPeerConfiguration("networkGame"));
+            // Sets the information into the socket and creates a thread for messages
             _client.Start();
+            // New variable for sending a message
             var outmsg = _client.CreateMessage();
+            // Inserts a type (category) into the message
             outmsg.Write((byte)PacketType.Login);
+            // Puts in the information into the type (category)
             outmsg.WriteAllProperties(loginInformation);
+            // Connect with the named host with port and message
             _client.Connect("localhost", 14241, outmsg);
+            // Looks if the client is getting information from server
             return EsablishInfo();
         }
 
