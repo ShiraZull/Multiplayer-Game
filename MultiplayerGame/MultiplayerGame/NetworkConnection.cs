@@ -39,23 +39,31 @@ namespace MultiplayerGame
 
         private bool EsablishInfo()
         {
+            // Checks time and stores it
             var time = DateTime.Now;
+            // New incoming messege
             NetIncomingMessage inc;
+            // Loop this function while it's true
             while (true)
             {
+                // If 5 seconds have passed, stop loop and turn established info to false
                 if (DateTime.Now.Subtract(time).Seconds > 5)
                 {
                     return false;
                 }
 
+                // If the messege is empty, then continue to the next segment
                 if ((inc = _client.ReadMessage()) == null) continue;
 
+                // Read messege type
                 switch (inc.MessageType)
                 {
                     case NetIncomingMessageType.Data:
+                        // Read the messege
                         var data = inc.ReadByte();
+                        // If data is login information
                         if (data == (byte)PacketType.Login)
-                        {
+                        { // check the next messege is true then return true (and EsablishInfo() = true)
                             var accepted = inc.ReadBoolean();
                             if (accepted)
                             {
