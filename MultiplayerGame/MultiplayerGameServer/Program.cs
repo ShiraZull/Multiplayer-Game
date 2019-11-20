@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using Lidgren.Network;
 using MultiplayerGameLibrary;
 
@@ -6,8 +7,12 @@ namespace MultiplayerGameServer
 {
     class Program
     {
+
+        private static List<Player> _players; 
+
         static void Main(string[] args)
         {
+            _players = new List<Player>(); 
             var config = new NetPeerConfiguration("networkGame") { Port = 14241 };
             config.EnableMessageType(NetIncomingMessageType.ConnectionApproval);
             var server = new NetServer(config);
@@ -26,24 +31,7 @@ namespace MultiplayerGameServer
                     case NetIncomingMessageType.UnconnectedData:
                         break;
                     case NetIncomingMessageType.ConnectionApproval:
-                        Console.WriteLine("New connection...");
-                        var data = inc.ReadByte();
-                        if (data == (byte)PacketType.Login)
-                        {
-                            Console.WriteLine("..connection accpeted.");
-                            var loginInformation = new NetworkLoginInformation();
-                            inc.ReadAllProperties(loginInformation);
-                            inc.SenderConnection.Approve();
-
-                            var outmsg = server.CreateMessage();
-                            outmsg.Write((byte)PacketType.Login);
-                            outmsg.Write(true);
-                            server.SendMessage(outmsg, inc.SenderConnection, NetDeliveryMethod.ReliableOrdered, 0);
-                        }
-                        else
-                        {
-                            inc.SenderConnection.Deny("Didn't send correct information.");
-                        }
+                        ConnectionApproval(inc, server);
                         break;
                     case NetIncomingMessageType.Data:
                         break;
@@ -70,5 +58,40 @@ namespace MultiplayerGameServer
                 }
             }
         }
+
+        private static void ConnectionApproval(NetIncomingMessage inc, NetServer server)
+        {
+            Console.WriteLine("New connection...");
+            var data = inc.ReadByte();
+            if (data == (byte)PacketType.Login)
+            {
+                Console.WriteLine("..connection accpeted.");
+                var player = CreatePlayer(inc);
+                inc.SenderConnection.Approve();
+                var outmsg = server.CreateMessage();
+                outmsg.Write((byte)PacketType.Login);
+                outmsg.Write(true);
+                outmsg.Write(player.XPosition);
+                outmsg.Write(player.YPosition);
+                server.SendMessage(outmsg, inc.SenderConnection, NetDeliveryMethod.ReliableOrdered, 0);
+            }
+            else
+            {
+                inc.SenderConnection.Deny("Didn't send correct information.");
+            }
+        }
+
+        private static Player CreatePlayer(NetIncomingMessage inc)
+        {
+            var random = new Random();
+            var player = new Player
+            {
+                Name = inc.ReadString(),
+                XPosition = random.Next(0, 750),
+                YPosition = random.Next(0, 420)
+            };
+            return player;
+        }
+
     }
 }

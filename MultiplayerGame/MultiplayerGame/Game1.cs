@@ -12,14 +12,15 @@ namespace MultiplayerGame
     {
         GraphicsDeviceManager graphics;
         SpriteBatch spriteBatch;
-        private NetworkConnection _networkConnection;
+        private ManagerNetwork _managerNetwork;
         private Color _color; //For test
+        private Texture2D _texture; //For test
 
         public Game1()
         {
             graphics = new GraphicsDeviceManager(this);
             Content.RootDirectory = "Content";
-            _networkConnection = new NetworkConnection();
+            _managerNetwork = new ManagerNetwork();
             _color = Color.CornflowerBlue;
         }
 
@@ -33,7 +34,7 @@ namespace MultiplayerGame
         {
             // TODO: Add your initialization logic here
             // Starting a network connection to the server and checks if it is connected.
-            if (_networkConnection.Start())
+            if (_managerNetwork.Start())
             {
                 _color = Color.Green;
             }
@@ -52,6 +53,7 @@ namespace MultiplayerGame
         {
             // Create a new SpriteBatch, which can be used to draw textures.
             spriteBatch = new SpriteBatch(GraphicsDevice);
+            _texture = Content.Load<Texture2D>("white_background");
 
             // TODO: use this.Content to load your game content here
         }
@@ -76,7 +78,7 @@ namespace MultiplayerGame
                 Exit();
 
             // An extra check for network connectivity after it actually been connected to the server.
-            _color = _networkConnection.Status == NetConnectionStatus.Connected ? Color.Green : Color.Red;
+            _color = _managerNetwork.Status == NetConnectionStatus.Connected ? Color.Green : Color.Red;
             // TODO: Add your update logic here
 
             base.Update(gameTime);
@@ -90,7 +92,12 @@ namespace MultiplayerGame
         {
             GraphicsDevice.Clear(_color);
 
-            // TODO: Add your drawing code here
+            spriteBatch.Begin();
+            if (_managerNetwork.Active)
+            {
+                spriteBatch.Draw(_texture, new Rectangle(_managerNetwork.Player.XPosition, _managerNetwork.Player.YPosition, 50, 50), Color.Black);
+            }
+            spriteBatch.End();
 
             base.Draw(gameTime);
         }
