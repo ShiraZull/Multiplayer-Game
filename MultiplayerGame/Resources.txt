@@ -9,3 +9,5 @@ Alexander Öberg // Classmate
 https://github.com/AlexanderReaper7/Networking_Game
 https://github.com/AlexanderReaper7/Alexander_Tools
 
+Kagelcizer // MonoGame Community Forum
+http://community.monogame.net/t/server-client-connection-for-lidgren/8567/3
