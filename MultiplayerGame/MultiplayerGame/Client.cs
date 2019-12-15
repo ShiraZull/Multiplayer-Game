@@ -6,6 +6,7 @@ namespace MultiplayerGame
     class Client
     {
 
+        // A identification for what kind of data is sent
         public enum DataType
         {
             Identification,
@@ -54,7 +55,7 @@ namespace MultiplayerGame
         /// </summary>
         public void Disconnect()
         {
-            client.Disconnect("*Yeets out*");
+            client.Disconnect("Disconnected");
         }
     }
 }
