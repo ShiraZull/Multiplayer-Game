@@ -40,9 +40,10 @@
   </PropertyGroup>
   <PropertyGroup />
   <ItemGroup>
+    <Compile Include="ClientOld.cs" />
     <Compile Include="Client.cs" />
     <Compile Include="Game1.cs" />
-    <Compile Include="Manager\ManagerNetwork.cs" />
+    <Compile Include="References\ManagerNetwork.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
