@@ -86,7 +86,7 @@ namespace MultiplayerGame
                     case NetIncomingMessageType.Data:
                         {
                             var dataType = incMsg.ReadByte();
-                            var message = ByteArrayToObject(incMsg.ReadBytes(incMsg.LengthBytes));
+                            var message = ByteArrayToObject(incMsg.ReadBytes(incMsg.LengthBytes - 1));
 
                             switch (dataType)
                             {

@@ -58,6 +58,8 @@ namespace MultiplayerGame
 
             #region Keys
 
+            client.ReadMessage();
+
             if (isKeyUp)
             {
                 if (Keyboard.GetState().IsKeyDown(Keys.W))

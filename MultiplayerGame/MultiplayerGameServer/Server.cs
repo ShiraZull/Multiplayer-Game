@@ -13,7 +13,7 @@ namespace MultiplayerGameServer
         private NetServer server;
         private List<Player> players;
 
-        public enum DataType
+        public enum DataType : byte
         {
             GameInfo, // e.g. PlayerID, How many players, how much time is left to start or if the game is active, reset.
             Board,
@@ -118,8 +118,8 @@ namespace MultiplayerGameServer
                         {
                             var playerID = incMsg.ReadByte();
                             var dataType = incMsg.ReadByte();
-                            var message = ByteArrayToObject(incMsg.ReadBytes(incMsg.LengthBytes));
-                            Console.WriteLine("Player{0} sent a {1}\nContaining: {2}", playerID, dataType.GetTypeCode(), message);
+                            var message = ByteArrayToObject(incMsg.ReadBytes(incMsg.LengthBytes - 2));
+                            Console.WriteLine("Player{0} sent a {1}\nContaining: {2}", playerID, (DataType) dataType, message);
                             
                             switch (dataType)
                             {
