@@ -28,9 +28,7 @@ namespace MultiplayerGameServer
 
         public bool gameActive = false;
 
-
-
-
+        
 
 
 
@@ -80,7 +78,7 @@ namespace MultiplayerGameServer
             outMsg.Write((byte)dataType);
             outMsg.Write(ObjectToByteArray(message));
             server.SendMessage(outMsg, player.netConnection, NetDeliveryMethod.ReliableOrdered);
-            Console.WriteLine("Sent message to {0} with a {1} containing {2}", player, dataType, message);
+            Console.WriteLine("Sent message to {0} with {1} containing {2}", player, dataType, message);
         }
 
         //public void SendMessageToAllPlayers(DataType dataType, Object message)
@@ -102,7 +100,7 @@ namespace MultiplayerGameServer
             outMsg.Write(ObjectToByteArray(message));
 
             server.SendMessage(outMsg, server.Connections, NetDeliveryMethod.ReliableOrdered, 0);
-            Console.WriteLine("Sent message to all players with a {0} containing {1}", dataType, message);
+            Console.WriteLine("Sent message to all players with {0} containing {1}", dataType, message);
         }
 
 
@@ -119,7 +117,7 @@ namespace MultiplayerGameServer
                             var playerID = incMsg.ReadByte();
                             var dataType = incMsg.ReadByte();
                             var message = ByteArrayToObject(incMsg.ReadBytes(incMsg.LengthBytes - 2));
-                            Console.WriteLine("Player{0} sent a {1}\nContaining: {2}", playerID, (DataType) dataType, message);
+                            Console.WriteLine("Player{0} sent {1} containing: {2}", playerID, (DataType) dataType, message);
                             
                             switch (dataType)
                             {

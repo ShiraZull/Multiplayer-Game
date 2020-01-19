@@ -56,10 +56,11 @@ namespace MultiplayerGame
                 Exit();
             }
 
-            #region Keys
-
             client.ReadMessage();
 
+
+            // Send message
+            #region Keys
             if (isKeyUp)
             {
                 if (Keyboard.GetState().IsKeyDown(Keys.W))

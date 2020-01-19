@@ -1,5 +1,6 @@
 ﻿using Lidgren.Network;
 using System;
+using System.Drawing;
 using System.IO;
 using System.Runtime.Serialization.Formatters.Binary;
 
@@ -23,6 +24,8 @@ namespace MultiplayerGame
         }
 
         public byte playerID;
+        public Point headPos;
+
 
 
 
@@ -92,11 +95,21 @@ namespace MultiplayerGame
                             {
                                 case (byte)DataType.GameInfo:
 
-                                    // WTF is this? ---------------------------------- TODO
+                                    // If message contains ID:i, extract the number i and put it as playerID
                                     if(message.ToString().StartsWith("ID:"))
                                     {
-                                        message.ToString().Remove(3);
-                                        Console.WriteLine(message.GetType());
+                                        
+                                        byte i = 1;
+                                        while (i <= 4)
+                                        {
+                                            if(message.ToString().EndsWith(i.ToString()))
+                                            {
+                                                playerID = i;
+                                                Console.WriteLine("playerID = {0}", playerID);
+                                                break;
+                                            }
+                                            i++;
+                                        }
                                     }
 
                                     break;
