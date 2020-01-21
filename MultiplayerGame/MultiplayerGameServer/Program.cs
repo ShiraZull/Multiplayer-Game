@@ -84,7 +84,7 @@ namespace MultiplayerGameServer
 
         public static void GameRun(TurnManager turnManager)
         {
-            turnManager.UpdateTime();
+            turnManager.UpdateGameTime();
         }
 
 
