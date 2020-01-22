@@ -7,27 +7,17 @@ namespace MultiplayerGameServer
 {
     class Program
     {
-
-        private static List<Player> _players;
-
-
-        
-
-
-
-
         static void Main(string[] args)
         {
 
             var server = new Server();
             server.StartServer();
+            server.gameActive = true;
             bool shutDown = false;
-            TurnManager turnManager = new TurnManager(9000, 2000);
-            turnManager.active = true;
             while (!shutDown)
             {
                 server.ReadMessages();
-                GameRun(turnManager);
+                server.GameRun();
             }
             
 
@@ -80,14 +70,7 @@ namespace MultiplayerGameServer
             #endregion
         }
 
-
-
-
-        public static void GameRun(TurnManager turnManager)
-        {
-            turnManager.UpdateGameTime();
-            turnManager.UpdateTurn();
-        }
+        
 
 
         //private static void ConnectionApproval(NetIncomingMessage inc, NetServer server)

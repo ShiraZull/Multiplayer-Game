@@ -11,7 +11,6 @@ namespace MultiplayerGameServer
     class Server
     {
         private NetServer server;
-        private List<Player> players;
 
         public enum DataType : byte
         {
@@ -27,12 +26,32 @@ namespace MultiplayerGameServer
         DataType dataType;
 
         public bool gameActive = false;
-
-        
-
-
+        private TurnManager turnManager = new TurnManager(1000, 2000);
+        private List<Player> players;
 
 
+        public void GameRun()
+        {
+            turnManager.UpdateTimeDiff();
+            if (gameActive)
+            {
+                turnManager.UpdateTurn();
+                if (turnManager.nextTurn)
+                {
+                    foreach (Player player in players)
+                    {
+                        player.Move();
+                    }
+                }
+            }
+
+
+        }
+
+
+
+        // A region full of network stuff
+        #region Network
         // Convert an Object to a byte array
         public static byte[] ObjectToByteArray(Object obj)
         {
@@ -102,7 +121,7 @@ namespace MultiplayerGameServer
             server.SendMessage(outMsg, server.Connections, NetDeliveryMethod.ReliableOrdered, 0);
             Console.WriteLine("Sent message to all players with {0} containing {1}", dataType, message);
         }
-
+        #endregion
 
         public void ReadMessages()
         {
@@ -134,7 +153,12 @@ namespace MultiplayerGameServer
 
                                     break;
                                 case (byte)DataType.Direction:
-
+                                    if ((byte)message == ((byte)players[playerID - 1].direction + 2) % 4 || (byte)message == (byte)players[playerID - 1].direction)
+                                    {
+                                        Console.WriteLine("Player{0} direction change request ignored", playerID);
+                                        break;
+                                    }
+                                    players[playerID - 1].direction = (Player.Direction)message;
                                     break;
                                 case (byte)DataType.HeadPos:
 
@@ -149,6 +173,7 @@ namespace MultiplayerGameServer
 
                             break;
                         }
+                    #region Network
                     case NetIncomingMessageType.DebugMessage:
                         Console.WriteLine(incMsg.ReadString());
                         break;
@@ -192,6 +217,8 @@ namespace MultiplayerGameServer
                 }
                 server.Recycle(incMsg);
             }
+            #endregion
+
         }
     }
 }

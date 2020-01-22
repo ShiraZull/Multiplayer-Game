@@ -15,7 +15,6 @@ namespace MultiplayerGameServer
         public float turnDelay;
         public int turn;
         public bool nextTurn;
-        public bool active;
 
         private TimeSpan timeSpan = new TimeSpan();
         private double timeDiff;
@@ -33,8 +32,8 @@ namespace MultiplayerGameServer
             time = -startCountdown;
             turn = 0;
             nextTurn = false;
-            active = false;
             currentDateTime = DateTime.Now;
+            Console.WriteLine($"TurnSettings: Countdown = {startCountdown} milliseconds\nTurnSettings: Interval = {turnDelay} milliseconds");
         }
 
         /// <summary>
@@ -50,37 +49,35 @@ namespace MultiplayerGameServer
             // A warning if the lag is above 20 milliseconds
             if (timeDiff >= 20) Console.WriteLine("Warning: GameTime is {0} milliseconds", timeDiff);
         }
-        
+
         /// <summary>
         /// Updates the time for the game, after hitting 0, first turn will begin and then change every turnDelay of milliseconds.
         /// </summary>
         public void UpdateTurn()
         {
-            if (active)
+            nextTurn = false;
+            time += (float)timeDiff;
+
+            // Whenever time is over the turninterval, next turn
+            if (time >= turnDelay)
             {
-                nextTurn = false;
-                time += (float) timeDiff;
-
-                // Whenever time is over the turninterval, next turn
-                if (time >= turnDelay)
-                {
-                    turn++;
-                    nextTurn = true;
-                    time -= turnDelay;
-                    Console.WriteLine("----- Turn: {0} -----", turn);
-                    return;
-                }
-
-                // Whenever times is passing 0, first turn
-                if (turn == 0 && time >= 0)
-                {
-                    turn = 1;
-                    nextTurn = true;
-                    Console.WriteLine("||||| START ||||||");
-                    Console.WriteLine("----- Turn: 1 -----");
-                }
-
+                turn++;
+                nextTurn = true;
+                time -= turnDelay;
+                Console.WriteLine("----- Turn: {0} -----", turn);
+                return;
             }
+
+            // Whenever times is passing 0, first turn
+            if (turn == 0 && time >= 0)
+            {
+                turn = 1;
+                nextTurn = true;
+                Console.WriteLine("||||| START ||||||");
+                Console.WriteLine("----- Turn: 1 -----");
+            }
+
+
         }
 
         /// <summary>
@@ -92,8 +89,9 @@ namespace MultiplayerGameServer
             time = -startCountdown;
             turn = 0;
             nextTurn = false;
-            active = false;
             currentDateTime = DateTime.Now;
+
+            Console.WriteLine($"RESET_TurnSettings: Countdown = {startCountdown} milliseconds\nTurnSettings: Interval = {turnDelay} milliseconds");
         }
 
     }

@@ -17,13 +17,14 @@ namespace MultiplayerGameServer
         public List<Body> bodies;
         public Point headPos;
         public Point prevHeadPos;
-        public enum Direction
+        public enum Direction : byte
         {
             Up,
             Left,
             Down,
             Right
         }
+        public Direction direction;
         /// <summary>
         /// A contruct that add another player/client to the game/server
         /// </summary>
@@ -37,6 +38,30 @@ namespace MultiplayerGameServer
             Console.WriteLine("Player{0} has connected as {1} with local address {2}", playerID, netConnection, netPeer.Configuration.LocalAddress);
         }
 
+        public void Move()
+        {
+            prevHeadPos = headPos;
+            switch((byte)direction)
+            {
+                case 0:
+                    headPos.Y--;
+                    break;
+                case 1:
+                    headPos.X--;
+                    break;
+                case 2:
+                    headPos.Y++;
+                    break;
+                case 3:
+                    headPos.X++;
+                    break;
+            }
+            Console.WriteLine("Player{0} has moved {1} to {2}", playerID, (Direction) direction, headPos);
+        }
+
+
+
+
         /// <summary>
         /// Reset the player and its position according to the ID and board size
         /// </summary>
@@ -47,19 +72,23 @@ namespace MultiplayerGameServer
             {
                 case 1:
                     headPos = new Point(1, 1);
+                    direction = (Direction)3;
                     Console.WriteLine("Player{0} spawned at " + headPos.ToString(), playerID);
                     break;
                 case 2:
                     headPos = new Point(boardSize.X, 1);
+                    direction = (Direction)1;
                     Console.WriteLine("Player{0} spawned at " + headPos.ToString(), playerID);
                     break;
                 case 3:
                     headPos = new Point(1, boardSize.Y);
-                    Console.WriteLine("Player{0} spawned " + headPos.ToString(), playerID);
+                    direction = (Direction)3;
+                    Console.WriteLine("Player{0} spawned at " + headPos.ToString(), playerID);
                     break;
                 case 4:
                     headPos = boardSize;
-                    Console.WriteLine("Player{0} spawned " + headPos.ToString(), playerID);
+                    direction = (Direction)1;
+                    Console.WriteLine("Player{0} spawned at " + headPos.ToString(), playerID);
                     break;
             }
             prevHeadPos = headPos;
