@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Resources;
 using System.Text;
 using System.Threading.Tasks;
 using System.Timers;
@@ -13,63 +14,86 @@ namespace MultiplayerGameServer
         public float time;
         public float turnDelay;
         public int turn;
-        public int prevTurn;
+        public bool nextTurn;
         public bool active;
-        int i; // for testing
-        float j = 1000f; // for testing
 
-        private float gameTime;
-        private float currentGameTime;
-        private float prevGameTime;
+        private TimeSpan timeSpan = new TimeSpan();
+        private double timeDiff;
+        private DateTime currentDateTime;
+        private DateTime prevDateTime;
 
+        /// <summary>
+        /// A class that handles time and what turn shall be next
+        /// </summary>
+        /// <param name="turnDelay"></param>
+        /// <param name="startCountdown"></param>
         public TurnManager(float turnDelay, float startCountdown)
         {
             this.turnDelay = turnDelay;
             time = -startCountdown;
             turn = 0;
-            prevTurn = 0;
+            nextTurn = false;
             active = false;
+            currentDateTime = DateTime.Now;
         }
 
-        public void UpdateGameTime()
+        /// <summary>
+        /// Updates the time difference between viritual updates
+        /// </summary>
+        public void UpdateTimeDiff()
         {
+            prevDateTime = currentDateTime;
+            currentDateTime = DateTime.Now;
+            timeSpan = currentDateTime - prevDateTime;
+            timeDiff = timeSpan.TotalMilliseconds;
+            
+            // A warning if the lag is above 20 milliseconds
+            if (timeDiff >= 20) Console.WriteLine("Warning: GameTime is {0} milliseconds", timeDiff);
+        }
+        
+        /// <summary>
+        /// Updates the time for the game, after hitting 0, first turn will begin and then change every turnDelay of milliseconds.
+        /// </summary>
+        public void UpdateTurn()
+        {
+            if (active)
+            {
+                nextTurn = false;
+                time += (float) timeDiff;
 
-            i++;
-            if (i == (int)j)
-            {
-                prevGameTime = currentGameTime;
-                currentGameTime = DateTime.Now.Second * 1000 + DateTime.Now.Millisecond;
-                if (currentGameTime - prevGameTime < 0) gameTime = currentGameTime - prevGameTime + 60000;
-                else gameTime = currentGameTime - prevGameTime;
-                Console.WriteLine("Current amount of milliseconds: {0} change of gameTime: {1}", currentGameTime, gameTime);
-            }
-            if(i==(int)j)
-            {
-                j = j*1.01f;
-                i = 0;
+                // Whenever time is over the turninterval, next turn
+                if (time >= turnDelay)
+                {
+                    turn++;
+                    nextTurn = true;
+                    time -= turnDelay;
+                    Console.WriteLine("----- Turn: {0} -----", turn);
+                    return;
+                }
+
+                // Whenever times is passing 0, first turn
+                if (turn == 0 && time >= 0)
+                {
+                    turn = 1;
+                    nextTurn = true;
+                    Console.WriteLine("||||| START ||||||");
+                    Console.WriteLine("----- Turn: 1 -----");
+                }
+
             }
         }
 
-        public bool NextTurn()
+        /// <summary>
+        /// A method for resseting the clock
+        /// </summary>
+        /// <param name="startCountdown"></param>
+        public void Reset(float startCountdown)
         {
-            if(active)
-            {
-                if (turn != prevTurn) return true;
-            }
-            return false;
-        }
-
-        public void UpdateTime()
-        {
-            time += 1;
-
-            if (i % 5 == 0) Console.WriteLine("Time: {0}", time);
-
-            if (turn == 0 && time >= 0)
-            {
-                turn = 1;
-                Console.WriteLine("Turn: {0}", turn);
-            }
+            time = -startCountdown;
+            turn = 0;
+            nextTurn = false;
+            active = false;
+            currentDateTime = DateTime.Now;
         }
 
     }

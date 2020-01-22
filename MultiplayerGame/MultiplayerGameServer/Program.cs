@@ -22,7 +22,8 @@ namespace MultiplayerGameServer
             var server = new Server();
             server.StartServer();
             bool shutDown = false;
-            TurnManager turnManager = new TurnManager(1000, 2000);
+            TurnManager turnManager = new TurnManager(9000, 2000);
+            turnManager.active = true;
             while (!shutDown)
             {
                 server.ReadMessages();
@@ -85,6 +86,7 @@ namespace MultiplayerGameServer
         public static void GameRun(TurnManager turnManager)
         {
             turnManager.UpdateGameTime();
+            turnManager.UpdateTurn();
         }
 
 
