@@ -12,6 +12,7 @@ namespace MultiplayerGameServer
 
             var server = new Server();
             server.StartServer();
+            server.GameSetup();
             server.gameActive = true;
             bool shutDown = false;
             while (!shutDown)

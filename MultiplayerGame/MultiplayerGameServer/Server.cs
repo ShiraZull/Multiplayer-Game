@@ -30,6 +30,10 @@ namespace MultiplayerGameServer
         private List<Player> players;
 
 
+        public void GameSetup()
+        {
+        }
+
         public void GameRun()
         {
             turnManager.UpdateTimeDiff();
@@ -38,10 +42,24 @@ namespace MultiplayerGameServer
                 turnManager.UpdateTurn();
                 if (turnManager.nextTurn)
                 {
+                    players[0].alive = true;
+                    players[0].board = new Point(5,5);
                     foreach (Player player in players)
                     {
-                        player.Move();
+                        if (player.alive)
+                        {
+                            player.Move();
+                            // TODO
+                            player.CollisionWall();
+                            // player.collisionBlob
+                            // if yes {score++ && player.bodyAdd at prevHead}
+                            // else bodyMove (life--)
+
+                            // player.collisionPlayer
+                        }
+                        
                     }
+                    // blob.spawn(players)
                 }
             }
 
@@ -153,7 +171,7 @@ namespace MultiplayerGameServer
 
                                     break;
                                 case (byte)DataType.Direction:
-                                    if ((byte)message == ((byte)players[playerID - 1].direction + 2) % 4 || (byte)message == (byte)players[playerID - 1].direction)
+                                    if ((byte)message == ((byte)players[playerID - 1].prevDirection + 2) % 4 || (byte)message == (byte)players[playerID - 1].prevDirection)
                                     {
                                         Console.WriteLine("Player{0} direction change request ignored", playerID);
                                         break;
