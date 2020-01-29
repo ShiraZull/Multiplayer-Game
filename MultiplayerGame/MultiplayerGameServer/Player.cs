@@ -14,7 +14,7 @@ namespace MultiplayerGameServer
 
         public bool alive;
         public int score;
-        public List<Body> bodies;
+        public List<Body> bodies = new List<Body>();
         public Point headPos = new Point(3,3);
         public Point prevHeadPos;
         public enum Direction : byte
@@ -62,45 +62,66 @@ namespace MultiplayerGameServer
                     headPos.X++;
                     break;
             }
-            Console.WriteLine("Player{0} has moved {1} to {2}", playerID, (Direction) direction, headPos);
-        }
 
+            if (CollisionWall()) Console.WriteLine("Player{0} has moved {1} to {2} (Player{0} got outside the board)", playerID, (Direction)direction, headPos);
+            else Console.WriteLine("Player{0} has moved {1} to {2}", playerID, (Direction) direction, headPos);
+            
+        }
         
-        public void CollisionWall()
+        public bool CollisionWall()
         {
-            if(headPos.X <= 0 || headPos.X > board.X)
+            if (headPos.X <= 0)
             {
-                headPos = prevHeadPos;
-
-                if (headPos.Y <= 1) direction = Direction.Down;
-                else if (headPos.Y >= board.Y) direction = Direction.Up;
-                else // TODO: Fix so that player dont randomly go up when you're going down, at the right wall, pressing right, and by chance move up or down -----------------
-                {
-                    int i = rand.Next(2);
-                    if(i == 1) direction = Direction.Up;
-                    else direction = Direction.Down;
-                }
-                Move();
-                return;
+                headPos.X = board.X;
+                return true;
             }
-
-            if (headPos.Y <= 0 || headPos.Y > board.Y)
+            else if (headPos.X > board.X)
             {
-                headPos = prevHeadPos;
-
-                if (headPos.X <= 1) direction = Direction.Right;
-                else if (headPos.X >= board.X) direction = Direction.Left;
-                else
-                {
-                    int i = rand.Next(2);
-                    if (i == 1) direction = Direction.Left;
-                    else direction = Direction.Right;
-                }
-                Move();
-                return;
+                headPos.X = 1;
+                return true;
+            }
+            else if (headPos.Y <= 0)
+            {
+                headPos.Y = board.Y;
+                return true;
+            }
+            else if (headPos.Y > board.Y)
+            {
+                headPos.Y = 1;
+                return true;
+            }
+            else
+            {
+                return false;
             }
         }
 
+        public bool CollisionBlob(List<Blob> blobs)
+        {
+            foreach (Blob blob in blobs)
+            {
+                if (blob.position == headPos)
+                {
+                    bodies.Add(new Body(prevHeadPos, ++score));
+                    Console.WriteLine("Player{0} has eaten a blob and has current score: {2}", playerID, blob, score);
+                    return true;
+                }
+            }
+            return false;
+        }
+        
+        public void MoveBody()
+        {
+            foreach (var body in bodies)
+            {
+                body.SubLife();
+                if (body.life <= 0)
+                {
+                    body.position = prevHeadPos;
+                    body.life = score;
+                }
+            }
+        }
 
         /// <summary>
         /// Reset the player and its position according to the ID and board size

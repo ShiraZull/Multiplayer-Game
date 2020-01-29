@@ -28,10 +28,13 @@ namespace MultiplayerGameServer
         public bool gameActive = false;
         private TurnManager turnManager = new TurnManager(1000, 2000);
         private List<Player> players;
-
+        private List<Blob> blobs = new List<Blob>();
+        
 
         public void GameSetup()
         {
+            blobs.Add(new Blob(new Point(1,1)));
+            Console.WriteLine($"Added blob at {blobs[0].position}");
         }
 
         public void GameRun()
@@ -50,7 +53,12 @@ namespace MultiplayerGameServer
                         {
                             player.Move();
                             // TODO
-                            player.CollisionWall();
+                            if (!player.CollisionBlob(blobs)) player.MoveBody();
+                            foreach (var body in player.bodies)
+                            {
+                                Console.WriteLine($"Body position: {body.position}");
+                            }
+                            
                             // player.collisionBlob
                             // if yes {score++ && player.bodyAdd at prevHead}
                             // else bodyMove (life--)

@@ -12,9 +12,9 @@ namespace MultiplayerGameServer
         public Point position;
         public int life;
 
-        public Body(int x, int y, int lifeSpan)
+        public Body(Point position, int lifeSpan)
         {
-            position = new Point(x, y);
+            this.position = position;
             life = lifeSpan;
         }
 
