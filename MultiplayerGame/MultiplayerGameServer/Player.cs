@@ -6,7 +6,7 @@ using System.Drawing;
 
 namespace MultiplayerGameServer
 {
-    class Player
+    public class Player
     {
         public NetConnection netConnection;
         public NetPeer netPeer;
@@ -28,6 +28,7 @@ namespace MultiplayerGameServer
         public Direction prevDirection;
 
         public Point board;
+        public Blob collidedBlob;
         private Random rand = new Random();
 
         /// <summary>
@@ -90,10 +91,7 @@ namespace MultiplayerGameServer
                 headPos.Y = 1;
                 return true;
             }
-            else
-            {
-                return false;
-            }
+            else return false;
         }
 
         public bool CollisionBlob(List<Blob> blobs)
@@ -102,6 +100,7 @@ namespace MultiplayerGameServer
             {
                 if (blob.position == headPos)
                 {
+                    collidedBlob = blob;
                     bodies.Add(new Body(prevHeadPos, ++score));
                     Console.WriteLine("Player{0} has eaten a blob and has current score: {2}", playerID, blob, score);
                     return true;
@@ -123,40 +122,62 @@ namespace MultiplayerGameServer
             }
         }
 
+        public void  CollisionPlayer(List<Player> players)
+        {
+            foreach (Player player in players)
+            {
+                if (headPos == player.headPos && playerID != player.playerID)
+                {
+                    alive = false;
+                    Console.WriteLine("Player{0} collided with Player{1} at {2]", playerID, player.playerID, headPos);
+                    return;
+                }
+                foreach (Body body in player.bodies)
+                {
+                    if (headPos == body.position)
+                    {
+                        alive = false;
+                        Console.WriteLine("Player{0} collided with Player{1} body at {2]", playerID, player.playerID, headPos);
+                        return;
+                    }
+                }
+            }
+            
+        }
+
         /// <summary>
         /// Reset the player and its position according to the ID and board size
         /// </summary>
         /// <param name="boardSize"></param>
         public void Reset(Point boardSize)
         {
-            switch (playerID)
-            {
-                case 1:
-                    headPos = new Point(1, 1);
-                    direction = (Direction)3;
-                    Console.WriteLine("Player{0} spawned at " + headPos.ToString(), playerID);
-                    break;
-                case 2:
-                    headPos = new Point(boardSize.X, 1);
-                    direction = (Direction)1;
-                    Console.WriteLine("Player{0} spawned at " + headPos.ToString(), playerID);
-                    break;
-                case 3:
-                    headPos = new Point(1, boardSize.Y);
-                    direction = (Direction)3;
-                    Console.WriteLine("Player{0} spawned at " + headPos.ToString(), playerID);
-                    break;
-                case 4:
-                    headPos = boardSize;
-                    direction = (Direction)1;
-                    Console.WriteLine("Player{0} spawned at " + headPos.ToString(), playerID);
-                    break;
-            }
+            board = boardSize;
             prevHeadPos = headPos;
             bodies.Clear();
             alive = true;
             score = 0;
             Console.WriteLine("Player{0} has been reset", playerID);
+
+            switch (playerID)
+            {
+                case 1:
+                    headPos = new Point(2, 2);
+                    direction = (Direction)3;
+                    break;
+                case 2:
+                    headPos = new Point(board.X-1, 2);
+                    direction = (Direction)1;
+                    break;
+                case 3:
+                    headPos = new Point(2, board.Y-1);
+                    direction = (Direction)3;
+                    break;
+                case 4:
+                    headPos = new Point(board.X-1, board.Y-1);
+                    direction = (Direction)1;
+                    break;
+            }
+            Console.WriteLine("Player{0} spawned at " + headPos.ToString(), playerID);
         }
 
     }

@@ -27,14 +27,18 @@ namespace MultiplayerGameServer
 
         public bool gameActive = false;
         private TurnManager turnManager = new TurnManager(1000, 2000);
+        private Board board = new Board(3);
         private List<Player> players;
         private List<Blob> blobs = new List<Blob>();
+        private List<Point> allCoordinates;
         
 
         public void GameSetup()
         {
             blobs.Add(new Blob(new Point(1,1)));
             Console.WriteLine($"Added blob at {blobs[0].position}");
+            allCoordinates = GetAllCoordinates();
+            
         }
 
         public void GameRun()
@@ -46,34 +50,42 @@ namespace MultiplayerGameServer
                 if (turnManager.nextTurn)
                 {
                     players[0].alive = true;
-                    players[0].board = new Point(5,5);
+                    players[0].board = board.size;
                     foreach (Player player in players)
                     {
                         if (player.alive)
                         {
                             player.Move();
-                            // TODO
-                            if (!player.CollisionBlob(blobs)) player.MoveBody();
+                            if (player.CollisionBlob(blobs)) blobs.Remove(player.collidedBlob);
+                            else player.MoveBody();
                             foreach (var body in player.bodies)
                             {
                                 Console.WriteLine($"Body position: {body.position}");
                             }
-                            
-                            // player.collisionBlob
-                            // if yes {score++ && player.bodyAdd at prevHead}
-                            // else bodyMove (life--)
-
-                            // player.collisionPlayer
+                            player.CollisionPlayer(players);
                         }
                         
                     }
-                    // blob.spawn(players)
+                    if(blobs.Count == 0)
+                    blobs.Add(new Blob(blobs, players, allCoordinates));
+                    Console.WriteLine($"New blob position: {blobs[blobs.Count-1].position}");
                 }
             }
-
-
         }
 
+
+        public List<Point> GetAllCoordinates()
+        {
+            List<Point> allCoordinates = new List<Point>();
+            for (int y = 1; y <= board.size.Y; y++)
+            {
+                for (int x = 1; x <= board.size.X; x++)
+                {
+                    allCoordinates.Add(new Point(x, y));
+                }
+            }
+            return allCoordinates;
+        }
 
 
         // A region full of network stuff

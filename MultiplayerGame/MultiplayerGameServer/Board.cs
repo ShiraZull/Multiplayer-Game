@@ -13,7 +13,7 @@ namespace MultiplayerGameServer
 
         public Board(int boardSize)
         {
-            size = new Point(boardSize);
+            size = new Point(boardSize, boardSize);
         }
 
 
