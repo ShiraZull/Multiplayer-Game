@@ -2,14 +2,16 @@
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
+using Tools_XNA_dotNET_Framework;
 
 namespace MultiplayerGame
 {
     public class Game1 : Game
     {
-        GraphicsDeviceManager graphics;
-        SpriteBatch spriteBatch;
-        Client client;
+        private GraphicsDeviceManager graphics;
+        private SpriteBatch spriteBatch;
+        private Camera2D camera;
+        private Client client;
 
         public bool isKeyUp = true;
         public enum Direction
@@ -26,6 +28,8 @@ namespace MultiplayerGame
         private float timer; // For test
         private Texture2D _texture; //For test
 
+
+
         public Game1()
         {
             graphics = new GraphicsDeviceManager(this);
@@ -36,9 +40,21 @@ namespace MultiplayerGame
         protected override void Initialize()
         {
             client = new Client();
+            ConfigCamera();
             client.StartClient();
             connected = client.IsConnectedToServer();
             base.Initialize();
+        }
+
+        public void ConfigCamera()
+        {
+            // Enable multisampling
+            graphics.PreferMultiSampling = true;
+            camera = new Camera2D(this);
+            graphics.PreferredBackBufferWidth = 600;
+            graphics.PreferredBackBufferHeight = 800;
+            graphics.ApplyChanges();
+
         }
 
         protected override void LoadContent()
@@ -121,6 +137,8 @@ namespace MultiplayerGame
         {
             GraphicsDevice.Clear(_color);
             spriteBatch.Begin();
+
+            client.Draw(spriteBatch, camera);
 
             spriteBatch.End();
             base.Draw(gameTime);

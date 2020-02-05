@@ -40,9 +40,11 @@
   </PropertyGroup>
   <PropertyGroup />
   <ItemGroup>
+    <Compile Include="Camera2D.cs" />
     <Compile Include="ClientOld.cs" />
     <Compile Include="Client.cs" />
     <Compile Include="Game1.cs" />
+    <Compile Include="Primitives2D.cs" />
     <Compile Include="References\ManagerNetwork.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

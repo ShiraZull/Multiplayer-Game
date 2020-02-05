@@ -3,6 +3,8 @@ using System;
 using System.Drawing;
 using System.IO;
 using System.Runtime.Serialization.Formatters.Binary;
+using Microsoft.Xna.Framework.Graphics;
+using Tools_XNA_dotNET_Framework;
 
 namespace MultiplayerGame
 {
@@ -27,6 +29,11 @@ namespace MultiplayerGame
         public Point headPos;
 
 
+
+        public void Draw(SpriteBatch spriteBacth, Camera2D camera)
+        {
+
+        }
 
 
         // Convert an Object to a byte array
