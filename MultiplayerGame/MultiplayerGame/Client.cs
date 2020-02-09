@@ -1,10 +1,10 @@
 ﻿using Lidgren.Network;
 using System;
-using System.Drawing;
 using System.IO;
 using System.Runtime.Serialization.Formatters.Binary;
 using Microsoft.Xna.Framework.Graphics;
 using Tools_XNA_dotNET_Framework;
+using Microsoft.Xna.Framework;
 
 namespace MultiplayerGame
 {
@@ -27,12 +27,24 @@ namespace MultiplayerGame
 
         public byte playerID;
         public Point headPos;
+        public int gridSize = 30;
+        public int squareSize;
+        public int lineSize;
+        public int playArea;
 
 
-
-        public void Draw(SpriteBatch spriteBacth, Camera2D camera)
+        public void Draw(SpriteBatch spriteBacth)
         {
+            Restart();
+            Primitives2D.DrawGrid(spriteBacth, gridSize, gridSize, squareSize, new Vector2((600 - playArea + lineSize)/(2), 200 + (600 - playArea - lineSize) / 2), Color.White, lineSize);
+        }
 
+        public void Restart()
+        {
+            squareSize = (600 - (gridSize + 1) * lineSize) / gridSize;
+            if(gridSize>20) lineSize = 1;
+            else lineSize = squareSize/(20);
+            playArea = gridSize * squareSize;
         }
 
 

@@ -10,7 +10,6 @@ namespace MultiplayerGame
     {
         private GraphicsDeviceManager graphics;
         private SpriteBatch spriteBatch;
-        private Camera2D camera;
         private Client client;
 
         public bool isKeyUp = true;
@@ -50,7 +49,6 @@ namespace MultiplayerGame
         {
             // Enable multisampling
             graphics.PreferMultiSampling = true;
-            camera = new Camera2D(this);
             graphics.PreferredBackBufferWidth = 600;
             graphics.PreferredBackBufferHeight = 800;
             graphics.ApplyChanges();
@@ -138,7 +136,7 @@ namespace MultiplayerGame
             GraphicsDevice.Clear(_color);
             spriteBatch.Begin();
 
-            client.Draw(spriteBatch, camera);
+            client.Draw(spriteBatch);
 
             spriteBatch.End();
             base.Draw(gameTime);
