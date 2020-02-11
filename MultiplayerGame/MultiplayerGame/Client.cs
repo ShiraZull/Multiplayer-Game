@@ -5,6 +5,7 @@ using System.Runtime.Serialization.Formatters.Binary;
 using Microsoft.Xna.Framework.Graphics;
 using Tools_XNA_dotNET_Framework;
 using Microsoft.Xna.Framework;
+using System.Collections.Generic;
 
 namespace MultiplayerGame
 {
@@ -25,18 +26,69 @@ namespace MultiplayerGame
             TurnAction // e.g. If the tail shall disepear, to add a body, or becomes dead (collision).
         }
 
+        // Local
         public byte playerID;
-        public Point headPos;
-        public int gridSize = 30;
+
+        // Player
+        public List<Player> players = new List<Player>(4);
+
+        // GameBoard
+        public int gridSize = 6;
         public int squareSize;
         public int lineSize;
         public int playArea;
+        public Vector2 gridPosition;
 
 
         public void Draw(SpriteBatch spriteBacth)
         {
             Restart();
-            Primitives2D.DrawGrid(spriteBacth, gridSize, gridSize, squareSize, new Vector2((600 - playArea + lineSize)/(2), 200 + (600 - playArea - lineSize) / 2), Color.White, lineSize);
+
+            foreach (Player player in players)
+            {
+
+            }
+            for(int x = 0; x < 4; x++)
+                for(int y = 0; y < 4; y++)
+                {
+                    if (x == 0)
+                        Primitives2D.DrawFilledRectangle(spriteBacth, new Rectangle((int)gridPosition.X + squareSize * x, (int)gridPosition.Y + squareSize * y, squareSize, squareSize), playerColor((byte)(y + 1)));
+                    else
+                    {
+                        Primitives2D.DrawFilledRectangle(spriteBacth, new Rectangle((int)gridPosition.X + squareSize * x, (int)gridPosition.Y + squareSize * y, squareSize, squareSize), new Color(playerColor((byte)(y + 1)), 0.2f));
+                    }
+                }
+            Primitives2D.DrawFilledRectangle(spriteBacth, new Rectangle((int)gridPosition.X + squareSize * 4, (int)gridPosition.Y + squareSize * 4, squareSize, squareSize), new Color(playerColor((byte)(0 + 1)), 0f));
+            //Primitives2D.DrawFilledRectangle(spriteBacth, new Rectangle((int)gridPosition.X + squareSize * 4, (int)gridPosition.Y + squareSize * 4, squareSize, squareSize), playerColor(true, 1));
+            //Primitives2D.DrawGrid(spriteBacth, gridSize, gridSize, squareSize, gridPosition, Color.White, lineSize);
+        }
+
+        public Color playerColor(byte playerID)
+        {
+            Color color = new Color();
+                if (playerID == 1)
+                {
+                    color = Color.Aqua;
+                    return color;
+                }
+                if (playerID == 2)
+                {
+                    color = Color.Magenta;
+                    return color;
+                }
+                if (playerID == 3)
+                {
+                    color = Color.Lime;
+                    return color;
+                }
+                if (playerID == 4)
+                {
+                    color = Color.Yellow;
+                    return color;
+                }
+            
+            color = Color.Gray;
+            return color;
         }
 
         public void Restart()
@@ -45,6 +97,7 @@ namespace MultiplayerGame
             if(gridSize>20) lineSize = 1;
             else lineSize = squareSize/(20);
             playArea = gridSize * squareSize;
+            gridPosition = new Vector2((600 - playArea + lineSize) / (2), 200 + (600 - playArea - lineSize) / 2);
         }
 
 

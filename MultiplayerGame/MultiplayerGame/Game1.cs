@@ -117,7 +117,7 @@ namespace MultiplayerGame
             {
                 if(client.IsConnectedToServer())
                 {
-                    _color = Color.Green;
+                    _color = Color.Black;
                     timer = 2f;
                 }
                 else
