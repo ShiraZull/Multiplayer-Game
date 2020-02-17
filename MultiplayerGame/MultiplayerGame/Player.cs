@@ -1,8 +1,7 @@
 ﻿using Lidgren.Network;
 using System;
 using System.Collections.Generic;
-using System.Drawing;
-
+using Microsoft.Xna.Framework;
 
 namespace MultiplayerGame
 {
@@ -16,7 +15,7 @@ namespace MultiplayerGame
         public Point headPos = new Point(3,3);
         public Point prevHeadPos;
 
-        public Player() { }
+        public Player(byte playerID) { this.playerID = playerID; }
 
         public void Position(Point position)
         {

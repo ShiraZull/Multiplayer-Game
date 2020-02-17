@@ -134,7 +134,7 @@ namespace MultiplayerGame
         protected override void Draw(GameTime gameTime)
         {
             GraphicsDevice.Clear(_color);
-            spriteBatch.Begin();
+            spriteBatch.Begin(SpriteSortMode.Deferred, BlendState.NonPremultiplied);
 
             client.Draw(spriteBatch);
 

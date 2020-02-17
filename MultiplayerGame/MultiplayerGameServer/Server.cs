@@ -27,7 +27,7 @@ namespace MultiplayerGameServer
 
         public bool gameActive = false;
         private TurnManager turnManager = new TurnManager(1000, 2000);
-        private Board board = new Board(3);
+        private Board board = new Board(6);
         private List<Player> players;
         private List<Blob> blobs = new List<Blob>();
         private List<Point> allCoordinates;
@@ -69,6 +69,12 @@ namespace MultiplayerGameServer
                     if(blobs.Count == 0)
                     blobs.Add(new Blob(blobs, players, allCoordinates));
                     Console.WriteLine($"New blob position: {blobs[blobs.Count-1].position}");
+
+                    foreach (Player player in players)
+                    {
+                        SendMessageToAllPlayers(DataType.HeadPos, "X:"+ player.headPos.X);
+                        SendMessageToAllPlayers(DataType.HeadPos, "Y:"+ player.headPos.Y);
+                    }
                 }
             }
         }
@@ -157,7 +163,7 @@ namespace MultiplayerGameServer
             outMsg.Write(ObjectToByteArray(message));
 
             server.SendMessage(outMsg, server.Connections, NetDeliveryMethod.ReliableOrdered, 0);
-            Console.WriteLine("Sent message to all players with {0} containing {1}", dataType, message);
+            Console.WriteLine($"Sent message to all players with {dataType} containing {message}");
         }
         #endregion
 

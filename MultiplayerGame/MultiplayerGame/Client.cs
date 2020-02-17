@@ -40,50 +40,47 @@ namespace MultiplayerGame
         public Vector2 gridPosition;
 
 
-        public void Draw(SpriteBatch spriteBacth)
+        public void Draw(SpriteBatch spriteBatch)
         {
-            Restart();
+            RestartGrid();
 
             foreach (Player player in players)
             {
-
-            }
-            for(int x = 0; x < 4; x++)
-                for(int y = 0; y < 4; y++)
+                DrawPlayerPart(spriteBatch, player.headPos, player.playerID, 1f);
+                foreach(Body body in player.bodies)
                 {
-                    if (x == 0)
-                        Primitives2D.DrawFilledRectangle(spriteBacth, new Rectangle((int)gridPosition.X + squareSize * x, (int)gridPosition.Y + squareSize * y, squareSize, squareSize), playerColor((byte)(y + 1)));
-                    else
-                    {
-                        Primitives2D.DrawFilledRectangle(spriteBacth, new Rectangle((int)gridPosition.X + squareSize * x, (int)gridPosition.Y + squareSize * y, squareSize, squareSize), new Color(playerColor((byte)(y + 1)), 0.2f));
-                    }
+                    DrawPlayerPart(spriteBatch, body.position, player.playerID, 0.7f);
                 }
-            Primitives2D.DrawFilledRectangle(spriteBacth, new Rectangle((int)gridPosition.X + squareSize * 4, (int)gridPosition.Y + squareSize * 4, squareSize, squareSize), new Color(playerColor((byte)(0 + 1)), 0f));
-            //Primitives2D.DrawFilledRectangle(spriteBacth, new Rectangle((int)gridPosition.X + squareSize * 4, (int)gridPosition.Y + squareSize * 4, squareSize, squareSize), playerColor(true, 1));
-            //Primitives2D.DrawGrid(spriteBacth, gridSize, gridSize, squareSize, gridPosition, Color.White, lineSize);
+            }
+            Primitives2D.DrawGrid(spriteBatch, gridSize, gridSize, squareSize, gridPosition, Color.White, lineSize);
         }
 
-        public Color playerColor(byte playerID)
+        public void DrawPlayerPart(SpriteBatch spriteBatch, Point position, byte playerID, float alpha)
+        {
+            Primitives2D.DrawFilledRectangle(spriteBatch, new Rectangle((int)gridPosition.X + squareSize * (position.X-1), (int)gridPosition.Y + squareSize * (position.Y-1), squareSize, squareSize), playerColor(playerID, alpha));
+        }
+
+        public Color playerColor(byte playerID, float alpha)
         {
             Color color = new Color();
                 if (playerID == 1)
                 {
-                    color = Color.Aqua;
+                color = new Color(Color.Aqua, alpha);
                     return color;
                 }
                 if (playerID == 2)
                 {
-                    color = Color.Magenta;
+                    color = new Color(Color.Magenta, alpha);
                     return color;
                 }
                 if (playerID == 3)
                 {
-                    color = Color.Lime;
+                    color = new Color(Color.Lime, alpha);
                     return color;
                 }
                 if (playerID == 4)
                 {
-                    color = Color.Yellow;
+                    color = new Color(Color.Yellow, alpha);
                     return color;
                 }
             
@@ -91,7 +88,8 @@ namespace MultiplayerGame
             return color;
         }
 
-        public void Restart()
+
+        public void RestartGrid()
         {
             squareSize = (600 - (gridSize + 1) * lineSize) / gridSize;
             if(gridSize>20) lineSize = 1;
@@ -150,6 +148,12 @@ namespace MultiplayerGame
             client.FlushSendQueue();
         }
 
+
+        // Variables for Reading messages in order
+        byte headPosPlayerIndex = 0;
+
+
+
         public void ReadMessage()
         {
             NetIncomingMessage incMsg;
@@ -162,13 +166,14 @@ namespace MultiplayerGame
                         {
                             var dataType = incMsg.ReadByte();
                             var message = ByteArrayToObject(incMsg.ReadBytes(incMsg.LengthBytes - 1));
+                            Console.WriteLine($"Server sent a {(DataType) dataType} containing {message}");
 
                             switch (dataType)
                             {
                                 case (byte)DataType.GameInfo:
 
                                     // If message contains ID:i, extract the number i and put it as playerID
-                                    if(message.ToString().StartsWith("ID:"))
+                                    if (message.ToString().StartsWith("ID:"))
                                     {
                                         
                                         byte i = 1;
@@ -177,7 +182,12 @@ namespace MultiplayerGame
                                             if(message.ToString().EndsWith(i.ToString()))
                                             {
                                                 playerID = i;
-                                                Console.WriteLine("playerID = {0}", playerID);
+                                                Console.WriteLine("Made playerID as {0}", playerID);
+                                                for (int a = 0; a < i; a++)
+                                                {
+                                                    players.Add(new Player((byte)(a + 1)));
+                                                }
+                                                Console.WriteLine($">>> There is currently {players.Count} players in 'players'");
                                                 break;
                                             }
                                             i++;
@@ -185,7 +195,9 @@ namespace MultiplayerGame
                                     }
 
                                     break;
+                                    
                                 case (byte)DataType.Board:
+                                    
 
                                     break;
                                 case (byte)DataType.AddBlob:
@@ -194,14 +206,30 @@ namespace MultiplayerGame
                                 case (byte)DataType.SubBlob:
 
                                     break;
-                                case (byte)DataType.Direction:
-
-                                    break;
                                 case (byte)DataType.HeadPos:
+
+                                    if (message.ToString().StartsWith("X:"))
+                                    {
+                                        players[headPosPlayerIndex].headPos.X = int.Parse(message.ToString().Remove(0, 2));
+                                    }
+                                    else if (message.ToString().StartsWith("Y:"))
+                                    {
+                                        players[headPosPlayerIndex].headPos.Y = int.Parse(message.ToString().Remove(0, 2));
+                                        headPosPlayerIndex++;
+                                    }
+                                    else Console.WriteLine($"Unhandled message: {message.ToString()}");
+
+                                    if (headPosPlayerIndex == players.Count)
+                                    {
+                                        headPosPlayerIndex = 0;
+                                    }
 
                                     break;
                                 case (byte)DataType.TurnAction:
 
+                                    break;
+                                default:
+                                    Console.WriteLine($"Unhandled DataType: {(DataType)dataType}");
                                     break;
                             }
 

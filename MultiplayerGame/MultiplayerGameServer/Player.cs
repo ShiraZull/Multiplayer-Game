@@ -129,7 +129,7 @@ namespace MultiplayerGameServer
                 if (headPos == player.headPos && playerID != player.playerID)
                 {
                     alive = false;
-                    Console.WriteLine("Player{0} collided with Player{1} at {2]", playerID, player.playerID, headPos);
+                    Console.WriteLine("Player{0} collided with Player{1} at {2}", playerID, player.playerID, headPos);
                     return;
                 }
                 foreach (Body body in player.bodies)
@@ -137,7 +137,7 @@ namespace MultiplayerGameServer
                     if (headPos == body.position)
                     {
                         alive = false;
-                        Console.WriteLine("Player{0} collided with Player{1} body at {2]", playerID, player.playerID, headPos);
+                        Console.WriteLine("Player{0} collided with Player{1} body at {2}", playerID, player.playerID, headPos);
                         return;
                     }
                 }
