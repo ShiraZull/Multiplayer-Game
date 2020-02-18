@@ -6,8 +6,7 @@ using System.Threading.Tasks;
 
 namespace MultiplayerGameLibrary
 {
-    public class NetworkLoginInformation
+    class Blob
     {
-        public string Name { get; set; }
     }
 }

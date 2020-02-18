@@ -12,6 +12,8 @@ namespace MultiplayerGameServer
         public NetPeer netPeer;
         public byte playerID;
 
+        public bool ready = false;
+
         public bool alive;
         public int score;
         public List<Body> bodies = new List<Body>();
@@ -152,7 +154,6 @@ namespace MultiplayerGameServer
         public void Reset(Point boardSize)
         {
             board = boardSize;
-            prevHeadPos = headPos;
             bodies.Clear();
             alive = true;
             score = 0;
@@ -177,6 +178,7 @@ namespace MultiplayerGameServer
                     direction = (Direction)1;
                     break;
             }
+            prevHeadPos = headPos;
             Console.WriteLine("Player{0} spawned at " + headPos.ToString(), playerID);
         }
 

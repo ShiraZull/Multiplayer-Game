@@ -70,13 +70,72 @@ namespace MultiplayerGameServer
                     blobs.Add(new Blob(blobs, players, allCoordinates));
                     Console.WriteLine($"New blob position: {blobs[blobs.Count-1].position}");
 
-                    foreach (Player player in players)
-                    {
-                        SendMessageToAllPlayers(DataType.HeadPos, "X:"+ player.headPos.X);
-                        SendMessageToAllPlayers(DataType.HeadPos, "Y:"+ player.headPos.Y);
-                    }
+                    SendGameData();
                 }
             }
+        }
+
+        public void RestartGame()
+        {
+            foreach (Player player in players)
+            {
+                player.Reset(board.size);
+            }
+            blobs.Clear();
+            if (board.size.X % 2 == 1)
+            {
+                blobs.Add(new Blob(new Point((board.size.X + 1) / 2, (board.size.Y + 1) / 2)));
+            }
+            if (board.size.X % 2 == 0)
+            {
+                blobs.Add(new Blob(new Point(board.size.X / 2, board.size.Y / 2)));
+                blobs.Add(new Blob(new Point(board.size.X / 2 +1, board.size.Y / 2)));
+                blobs.Add(new Blob(new Point(board.size.X / 2, board.size.Y / 2 +1)));
+                blobs.Add(new Blob(new Point(board.size.X / 2 +1, board.size.Y / 2 +1)));
+            }
+
+        }
+
+        public void EndGame()
+        {
+
+        }
+
+        public void SendGameData()
+        {
+            foreach (Player player in players)
+            {
+                if (player.alive)
+                {
+                    SendMessageToAllPlayers(DataType.HeadPos, "X:" + player.headPos.X);
+                    SendMessageToAllPlayers(DataType.HeadPos, "Y:" + player.headPos.Y);
+                    if (player.CollisionBlob(blobs))
+                    {
+                        blobs.Remove(player.collidedBlob);
+                        SendMessageToAllPlayers(DataType.SubBlob, $"BlobX:{player.collidedBlob.position.X}");
+                        SendMessageToAllPlayers(DataType.SubBlob, $"BlobY:{player.collidedBlob.position.Y}");
+
+                        SendMessageToAllPlayers(DataType.TurnAction, $"Player{player.playerID}: BODY");
+                    }
+                }
+                else SendMessageToAllPlayers(DataType.TurnAction, $"Player{player.playerID}: DEAD");
+
+            }
+            foreach (Blob blob in blobs)
+            {
+
+            }
+        }
+
+        public void AddBlob(int X, int Y)
+        {
+            blobs.Add(new Blob(new Point(X, Y)));
+            SendMessageToAllPlayers(DataType.AddBlob, new Microsoft.Xna.Framework.Point(X, Y));
+        }
+
+        public void SubBlob(Blob blob)
+        {
+
         }
 
 
@@ -143,18 +202,7 @@ namespace MultiplayerGameServer
             server.SendMessage(outMsg, player.netConnection, NetDeliveryMethod.ReliableOrdered);
             Console.WriteLine("Sent message to {0} with {1} containing {2}", player, dataType, message);
         }
-
-        //public void SendMessageToAllPlayers(DataType dataType, Object message)
-        //{
-        //    NetOutgoingMessage outMsg = server.CreateMessage();
-        //    outMsg.Write((byte)dataType);
-        //    outMsg.Write(ObjectToByteArray(message));
-
-        //    List<NetConnection> connections = new List<NetConnection>();
-        //    foreach (Player player in players) connections.Add(player.netConnection);
-
-        //    server.SendMessage(outMsg, connections, NetDeliveryMethod.ReliableOrdered, 0);
-        //}
+        
         
         public void SendMessageToAllPlayers(DataType dataType, Object message)
         {
@@ -240,7 +288,11 @@ namespace MultiplayerGameServer
                                     {
                                         if (player.netConnection == incMsg.SenderConnection)
                                         {
-                                            players.Remove(player);
+                                            if (gameActive)
+                                            {
+                                                player.alive = false;
+                                            }
+                                            else players.Remove(player);
                                             Console.WriteLine("Player{0} is disconnecting...", player.playerID);
                                         }
                                     }

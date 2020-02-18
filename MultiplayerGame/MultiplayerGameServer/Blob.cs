@@ -22,7 +22,6 @@ namespace MultiplayerGameServer
 
         public Blob(List<Blob> blobs, List<Player> players, List<Point> allCoordinates)
         {
-            //List<Point> availableCoordinates = allCoordinates;
             List<Point> availableCoordinates = new List<Point>(allCoordinates);
 
             List<Point> collisionCoordinates = new List<Point>();
