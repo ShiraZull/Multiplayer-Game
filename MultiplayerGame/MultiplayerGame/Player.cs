@@ -17,7 +17,7 @@ namespace MultiplayerGame
 
         public Player(byte playerID) { this.playerID = playerID; }
 
-        public void Position(Point position)
+        public void NewPosition(Point position)
         {
             prevHeadPos = headPos;
             headPos = position;

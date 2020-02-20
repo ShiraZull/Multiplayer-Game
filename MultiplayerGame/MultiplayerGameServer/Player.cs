@@ -1,15 +1,14 @@
 ﻿using Lidgren.Network;
 using System;
 using System.Collections.Generic;
-using System.Drawing;
+using Microsoft.Xna.Framework;
 
 
 namespace MultiplayerGameServer
 {
     public class Player
     {
-        public NetConnection netConnection;
-        public NetPeer netPeer;
+        public NetConnection netConnection; //Server
         public byte playerID;
 
         public bool ready = false;
@@ -27,11 +26,10 @@ namespace MultiplayerGameServer
             Right
         }
         public Direction direction;
-        public Direction prevDirection;
+        public Direction prevDirection; //Server
 
         public Point board;
         public Blob collidedBlob;
-        private Random rand = new Random();
 
         /// <summary>
         /// A contruct that add another player/client to the game/server
@@ -41,12 +39,13 @@ namespace MultiplayerGameServer
         public Player(NetConnection connection, byte ID)
         {
             netConnection = connection;
-            netPeer = connection.Peer;
             playerID = ID;
-            Console.WriteLine("Player{0} has connected as {1} with local address {2}", playerID, netConnection, netPeer.Configuration.LocalAddress);
+            Console.WriteLine($"Player{playerID} has connected as {netConnection} with local address {netConnection.Peer.Configuration.LocalAddress}");
         }
+        
+        public Player(byte ID) { playerID = ID; }
 
-        public void Move()
+        public void Move() // Server
         {
             prevHeadPos = headPos;
             prevDirection = direction;
@@ -66,12 +65,18 @@ namespace MultiplayerGameServer
                     break;
             }
 
-            if (CollisionWall()) Console.WriteLine("Player{0} has moved {1} to {2} (Player{0} got outside the board)", playerID, (Direction)direction, headPos);
-            else Console.WriteLine("Player{0} has moved {1} to {2}", playerID, (Direction) direction, headPos);
+            if (CollisionWall()) Console.WriteLine($"Player{playerID} has moved {direction} outside the grid to {headPos}");
+            else Console.WriteLine($"Player{playerID} has moved {direction} to {headPos}");
             
         }
-        
-        public bool CollisionWall()
+
+        public void NewPosition(Point position) // Client
+        {
+            prevHeadPos = headPos;
+            headPos = position;
+        }
+
+        private bool CollisionWall() // Is included in Move()
         {
             if (headPos.X <= 0)
             {
@@ -104,15 +109,24 @@ namespace MultiplayerGameServer
                 {
                     collidedBlob = blob;
                     bodies.Add(new Body(prevHeadPos, ++score));
-                    Console.WriteLine("Player{0} has eaten a blob and has current score: {2}", playerID, blob, score);
+                    Console.WriteLine($"Player{playerID} has eaten a blob at {blob.position} and has current score: {score}");
                     return true;
                 }
             }
             return false;
         }
-        
-        public void MoveBody()
+
+        /// <summary>
+        /// Moves the body forward, deletes last and adds a body at prevHeadPos
+        /// </summary>
+        /// <param name="If player has eaten blob, it only adds a body and a point"></param>
+        public void MoveBody(bool eatBlob)
         {
+            if (eatBlob)
+            {
+                bodies.Add(new Body(prevHeadPos, ++score));
+                return;
+            }
             foreach (var body in bodies)
             {
                 body.SubLife();
@@ -131,7 +145,7 @@ namespace MultiplayerGameServer
                 if (headPos == player.headPos && playerID != player.playerID)
                 {
                     alive = false;
-                    Console.WriteLine("Player{0} collided with Player{1} at {2}", playerID, player.playerID, headPos);
+                    Console.WriteLine($"Player{playerID} collided with Player{player.playerID} at {headPos}");
                     return;
                 }
                 foreach (Body body in player.bodies)
@@ -139,7 +153,7 @@ namespace MultiplayerGameServer
                     if (headPos == body.position)
                     {
                         alive = false;
-                        Console.WriteLine("Player{0} collided with Player{1} body at {2}", playerID, player.playerID, headPos);
+                        Console.WriteLine($"Player{playerID} collided with Player{player.playerID} body at {headPos}");
                         return;
                     }
                 }
@@ -157,7 +171,7 @@ namespace MultiplayerGameServer
             bodies.Clear();
             alive = true;
             score = 0;
-            Console.WriteLine("Player{0} has been reset", playerID);
+            Console.WriteLine($"Player{playerID} has been reset");
 
             switch (playerID)
             {
@@ -179,7 +193,7 @@ namespace MultiplayerGameServer
                     break;
             }
             prevHeadPos = headPos;
-            Console.WriteLine("Player{0} spawned at " + headPos.ToString(), playerID);
+            Console.WriteLine($"Player{playerID} spawned at " + headPos.ToString());
         }
 
     }

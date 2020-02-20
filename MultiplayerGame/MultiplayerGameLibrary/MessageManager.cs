@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using System.Runtime.Serialization.Formatters.Binary;
 using System.IO;
 using Lidgren.Network;
+using Microsoft.Xna.Framework;
 
 namespace MultiplayerGameLibrary
 {
@@ -165,6 +166,7 @@ namespace MultiplayerGameLibrary
                         Console.WriteLine($"Unhandled message type: {incMsg.MessageType}");
                         break;
                 }
+                #endregion
                 server.Recycle(incMsg);
             }
         }
@@ -251,98 +253,99 @@ namespace MultiplayerGameLibrary
                         Console.WriteLine($"Unhandled message type: {incMsg.MessageType}");
                         break;
                 }
+                #endregion
                 server.Recycle(incMsg);
             }
         }
 
-        public void ReadMessages()
-        {
-            NetIncomingMessage incMsg;
+        //public void ReadMessages()
+        //{
+        //    NetIncomingMessage incMsg;
 
-            while ((incMsg = server.ReadMessage()) != null)
-            {
-                switch (incMsg.MessageType)
-                {
-                    case NetIncomingMessageType.Data:
-                        {
-                            var playerID = incMsg.ReadByte();
-                            PacketType packetType = (PacketType)incMsg.ReadByte();
-                            var message = ByteArrayToObject(incMsg.ReadBytes(incMsg.LengthBytes - 2));
-                            Console.WriteLine($"Player{playerID} sent {packetType} containing: {message}");
+        //    while ((incMsg = server.ReadMessage()) != null)
+        //    {
+        //        switch (incMsg.MessageType)
+        //        {
+        //            case NetIncomingMessageType.Data:
+        //                {
+        //                    var playerID = incMsg.ReadByte();
+        //                    PacketType packetType = (PacketType)incMsg.ReadByte();
+        //                    var message = ByteArrayToObject(incMsg.ReadBytes(incMsg.LengthBytes - 2));
+        //                    Console.WriteLine($"Player{playerID} sent {packetType} containing: {message}");
 
-                            switch (packetType)
-                            {
-                                case PacketType.GameInfo:
+        //                    switch (packetType)
+        //                    {
+        //                        case PacketType.GameInfo:
 
-                                    break;
-                                case PacketType.Direction:
-                                    if ((byte)message == ((byte)players[playerID - 1].prevDirection + 2) % 4 || (byte)message == (byte)players[playerID - 1].prevDirection)
-                                    {
-                                        Console.WriteLine($"Player{playerID} direction change request ignored");
-                                        break;
-                                    }
-                                    players[playerID - 1].direction = (Player.Direction)message;
-                                    break;
-                                default:
-                                    Console.WriteLine($"Unhandled packageType: {packetType}");
-                                    break;
-                            }
-                            break;
-                        }
-                    #region Network
-                    case NetIncomingMessageType.DebugMessage:
-                        Console.WriteLine(incMsg.ReadString());
-                        break;
-                    case NetIncomingMessageType.StatusChanged:
-                        switch (incMsg.SenderConnection.Status)
-                        {
-                            case NetConnectionStatus.RespondedConnect:
-                                Console.WriteLine("Someone tries to connect...");
-                                break;
+        //                            break;
+        //                        case PacketType.Direction:
+        //                            if ((byte)message == ((byte)players[playerID - 1].prevDirection + 2) % 4 || (byte)message == (byte)players[playerID - 1].prevDirection)
+        //                            {
+        //                                Console.WriteLine($"Player{playerID} direction change request ignored");
+        //                                break;
+        //                            }
+        //                            players[playerID - 1].direction = (Player.Direction)message;
+        //                            break;
+        //                        default:
+        //                            Console.WriteLine($"Unhandled packageType: {packetType}");
+        //                            break;
+        //                    }
+        //                    break;
+        //                }
+        //            #region Network
+        //            case NetIncomingMessageType.DebugMessage:
+        //                Console.WriteLine(incMsg.ReadString());
+        //                break;
+        //            case NetIncomingMessageType.StatusChanged:
+        //                switch (incMsg.SenderConnection.Status)
+        //                {
+        //                    case NetConnectionStatus.RespondedConnect:
+        //                        Console.WriteLine("Someone tries to connect...");
+        //                        break;
 
-                            case NetConnectionStatus.Connected:
-                                players.Add(new Player(incMsg.SenderConnection, (byte)(players.Count + 1)));
-                                Console.WriteLine("Player{0} has connected succesfully with {1}", players.Count, players[0].netConnection);
-                                SendMessageToClient(players[players.Count - 1], PacketType.GameInfo, "ID:" + players.Count);
-                                break;
+        //                    case NetConnectionStatus.Connected:
+        //                        players.Add(new Player(incMsg.SenderConnection, (byte)(players.Count + 1)));
+        //                        Console.WriteLine("Player{0} has connected succesfully with {1}", players.Count, players[0].netConnection);
+        //                        SendMessageToClient(players[players.Count - 1], PacketType.GameInfo, "ID:" + players.Count);
+        //                        break;
 
-                            case NetConnectionStatus.Disconnecting: // TODO: Fix so that the game wont break when someone disconnects!
-                                {
-                                    foreach (Player player in players)
-                                    {
-                                        if (player.netConnection == incMsg.SenderConnection)
-                                        {
-                                            Console.WriteLine($"Player{player.playerID} ({incMsg.SenderConnection}) is disconnecting...");
-                                        }
-                                    }
-                                }
-                                break;
+        //                    case NetConnectionStatus.Disconnecting: // TODO: Fix so that the game wont break when someone disconnects!
+        //                        {
+        //                            foreach (Player player in players)
+        //                            {
+        //                                if (player.netConnection == incMsg.SenderConnection)
+        //                                {
+        //                                    Console.WriteLine($"Player{player.playerID} ({incMsg.SenderConnection}) is disconnecting...");
+        //                                }
+        //                            }
+        //                        }
+        //                        break;
 
-                            case NetConnectionStatus.Disconnected:
-                                foreach (Player player in players)
-                                {
-                                    if (player.netConnection == incMsg.SenderConnection)
-                                    {
-                                        Console.WriteLine($"Player{player.playerID} ({incMsg.SenderConnection}) has disconnected!");
-                                        break;
-                                    }
-                                }
-                                Console.WriteLine($"Unknown ({incMsg.SenderConnection}) disconnected!");
-                                break;
-                            default:
-                                Console.WriteLine($"Unhandled message type: {incMsg.SenderConnection.Status}");
-                                break;
-                        }
-                        break;
-                    default:
-                        Console.WriteLine($"Unhandled message type: {incMsg.MessageType}");
-                        break;
-                }
-                server.Recycle(incMsg);
-            }
-            #endregion
+        //                    case NetConnectionStatus.Disconnected:
+        //                        foreach (Player player in players)
+        //                        {
+        //                            if (player.netConnection == incMsg.SenderConnection)
+        //                            {
+        //                                Console.WriteLine($"Player{player.playerID} ({incMsg.SenderConnection}) has disconnected!");
+        //                                break;
+        //                            }
+        //                        }
+        //                        Console.WriteLine($"Unknown ({incMsg.SenderConnection}) disconnected!");
+        //                        break;
+        //                    default:
+        //                        Console.WriteLine($"Unhandled message type: {incMsg.SenderConnection.Status}");
+        //                        break;
+        //                }
+        //                break;
+        //            default:
+        //                Console.WriteLine($"Unhandled message type: {incMsg.MessageType}");
+        //                break;
+        //        }
+        //        server.Recycle(incMsg);
+        //    }
+        //    #endregion
 
-        }
+        //}
 
         // Convert an Object to a byte array
         private static byte[] ObjectToByteArray(Object obj)
