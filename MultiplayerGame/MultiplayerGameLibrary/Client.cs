@@ -12,7 +12,7 @@ using Tools_XNA_dotNET_Framework;
 
 namespace MultiplayerGameLibrary
 {
-    class Client
+    public class Client
     {
         private NetClient client;
 

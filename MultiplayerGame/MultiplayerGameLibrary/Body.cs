@@ -2,7 +2,7 @@
 
 namespace MultiplayerGameLibrary
 {
-    class Body
+    public class Body
     {
         public Point position;
         public int life;

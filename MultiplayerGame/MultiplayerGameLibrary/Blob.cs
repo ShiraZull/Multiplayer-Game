@@ -7,7 +7,7 @@ using Microsoft.Xna.Framework;
 
 namespace MultiplayerGameLibrary
 {
-    class Blob
+    public class Blob
     {
         public Point position;
         public Point board;
@@ -20,9 +20,9 @@ namespace MultiplayerGameLibrary
         }
 
 
-        public Blob(List<Blob> blobs, List<Player> players, List<Point> allCoordinates)
+        public Blob(List<Blob> blobs, List<Player> players, Point grid)
         {
-            List<Point> availableCoordinates = new List<Point>(allCoordinates);
+            List<Point> availableCoordinates = new List<Point>(GetAllCoordinates(grid));
 
             List<Point> collisionCoordinates = new List<Point>();
 
@@ -30,7 +30,6 @@ namespace MultiplayerGameLibrary
 
             Console.WriteLine($"||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||");
             Console.WriteLine($"Collision before calc: {collisionCoordinates.Count}");
-            Console.WriteLine($"AllCoord before calc: {allCoordinates.Count}");
             Console.WriteLine($"Available before calc: {availableCoordinates.Count}");
 
             foreach (Blob blob in blobs) collisionCoordinates.Add(blob.position);
@@ -46,12 +45,24 @@ namespace MultiplayerGameLibrary
 
             Console.WriteLine($"--------------------------------------------------------------------");
             Console.WriteLine($"Collision after calc: {collisionCoordinates.Count}");
-            Console.WriteLine($"AllCoord after calc: {allCoordinates.Count}");
             Console.WriteLine($"Available after calc: {availableCoordinates.Count}");
             Console.WriteLine($"SpawnPlace Index: {spawnPlace}");
             Console.WriteLine($"||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||");
 
             position = availableCoordinates[spawnPlace];
+        }
+
+        public List<Point> GetAllCoordinates(Point grid)
+        {
+            List<Point> allCoordinates = new List<Point>();
+            for (int y = 1; y <= grid.Y; y++)
+            {
+                for (int x = 1; x <= grid.X; x++)
+                {
+                    allCoordinates.Add(new Point(x, y));
+                }
+            }
+            return allCoordinates;
         }
     }
 }

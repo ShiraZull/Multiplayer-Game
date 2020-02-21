@@ -10,36 +10,30 @@ using Microsoft.Xna.Framework;
 
 namespace MultiplayerGameLibrary
 {
-    class Server
+    public class Server
     {
         private NetServer server;
-
-        public enum DataType : byte
-        {
-            GameInfo, // e.g. PlayerID, How many players, how much time is left to start or if the game is active, reset.
-            Board,
-            AddBlob,
-            SubBlob,
-            Direction,
-
-            HeadPos,
-            TurnAction // e.g. If the tail shall disepear, to add a body, or becomes dead (collision).
-        }
-        DataType dataType;
+        private MessageManager MM;
 
         public bool gameActive = false;
-        private TurnManager turnManager = new TurnManager(1000, 2000);
+        private TurnManager turnManager;
         private Point grid = new Point(6);
         private List<Player> players;
         private List<Blob> blobs = new List<Blob>();
-        private List<Point> allCoordinates;
+
+
+        public void Initialize()
+        {
+            MM = new MessageManager(server);
+            players = new List<Player>(4);
+            turnManager = new TurnManager(1000, 2000);
+        }
 
 
         public void GameSetup()
         {
             blobs.Add(new Blob(new Point(1, 1)));
             Console.WriteLine($"Added blob at {blobs[0].position}");
-            allCoordinates = GetAllCoordinates();
 
         }
 
@@ -57,7 +51,7 @@ namespace MultiplayerGameLibrary
                     {
                         if (player.alive)
                         {
-                            player.Move();
+                            player.MoveHead();
                             if (player.CollisionBlob(blobs))
                             {
                                 player.MoveBody(true);
@@ -72,10 +66,10 @@ namespace MultiplayerGameLibrary
 
                     }
                     if (blobs.Count == 0)
-                        blobs.Add(new Blob(blobs, players, allCoordinates));
+                        blobs.Add(new Blob(blobs, players, grid));
                     Console.WriteLine($"New blob position: {blobs[blobs.Count - 1].position}");
 
-                    SendGameData();
+                    SendEndTurnData();
                 }
             }
         }
@@ -100,19 +94,15 @@ namespace MultiplayerGameLibrary
             }
 
         }
+        
 
-        public void EndGame()
-        {
-
-        }
-
-        public void SendGameData()
+        public void SendEndTurnData()
         {
             foreach (Player player in players)
             {
                 if (player.alive)
                 {
-                    SendMessageToAllPlayers(DataType.HeadPos, "X:" + player.headPos.X);
+                    MM.SendMessageToAllClients(MessageManager.PacketType.HeadPos, player.playerID, player.headPos);
                     SendMessageToAllPlayers(DataType.HeadPos, "Y:" + player.headPos.Y);
                     if (player.CollisionBlob(blobs))
                     {
@@ -131,194 +121,153 @@ namespace MultiplayerGameLibrary
             }
         }
 
-        public void AddBlob(int X, int Y)
+
+
+        #region Network Methods
+        public void GeneralData(Player player, object data)
         {
-            blobs.Add(new Blob(new Point(X, Y)));
-            SendMessageToAllPlayers(DataType.AddBlob, new Microsoft.Xna.Framework.Point(X, Y));
+            MM.SendMessageToClient(player, MessageManager.PacketType.GeneralData, data);
         }
-
-        public void SubBlob(Blob blob)
+        public void GeneralData(object data)
         {
-
+            MM.SendMessageToAllClients(MessageManager.PacketType.GeneralData, data);
         }
-
-
-        public List<Point> GetAllCoordinates()
+        public void GridData(Point newGridSize)
         {
-            List<Point> allCoordinates = new List<Point>();
-            for (int y = 1; y <= grid.Y; y++)
+            grid = newGridSize;
+            Console.WriteLine($"Changed gridsize to {grid}");
+            MM.SendMessageToAllClients(MessageManager.PacketType.GridData, grid);
+        }
+        public void PlayerConnected(NetConnection netConnection)
+        {
+            players.Add(new Player(netConnection, (byte)(players.Count + 1)));
+            Console.WriteLine($"Player connected with {netConnection} and has now the ID as {players.Count}");
+            MM.SendMessageToClient(players[players.Count-1], MessageManager.PacketType.GeneralData, "ID:" + players.Count);
+            GeneralData(players[players.Count - 1], "ID:" + players.Count);
+            MM.SendMessageToAllClients(MessageManager.PacketType.PlayerConnected, (byte)players.Count, netConnection);
+        }
+        public void PlayerDisconnected(NetConnection senderConnection)
+        {
+            foreach (Player player in players)
             {
-                for (int x = 1; x <= grid.X; x++)
+                if (player.netConnection == senderConnection)
                 {
-                    allCoordinates.Add(new Point(x, y));
+                    Console.WriteLine($"Player{player.playerID} ({senderConnection}) has disconnected!");
+                    if (gameActive)
+                    {
+                        player.disconnected = true;
+                        Console.WriteLine($"Changed Player{player.playerID}'s state to disconnected");
+                        player.alive = false;
+                        Console.WriteLine($"Changed Player{player.playerID}'s state to dead, will be removed from player list after the match");
+                        PlayerAlive(player.playerID, false);
+                    }
+                    else
+                    {
+                        players.Remove(player);
+                        Console.WriteLine($"Removed Player{player.playerID} from the player list");
+                        MM.SendMessageToAllClients(MessageManager.PacketType.PlayerDisconnected, player.playerID);
+                    }
+
+                    return;
                 }
             }
-            return allCoordinates;
+            Console.WriteLine($"Unknown ({senderConnection}) disconnected!");
+
         }
-
-
-        // A region full of network stuff
-        #region Network
-        // Convert an Object to a byte array
-        public static byte[] ObjectToByteArray(Object obj)
+        public void PlayerDisconnected()
         {
-            BinaryFormatter bf = new BinaryFormatter();
-            using (var ms = new MemoryStream())
+            foreach (Player player in players)
             {
-                bf.Serialize(ms, obj);
-                return ms.ToArray();
-            }
-        }
-
-        // Convert a byte array to an Object
-        public static Object ByteArrayToObject(byte[] arrBytes)
-        {
-            using (var memStream = new MemoryStream())
-            {
-                var binForm = new BinaryFormatter();
-                memStream.Write(arrBytes, 0, arrBytes.Length);
-                memStream.Seek(0, SeekOrigin.Begin);
-                var obj = binForm.Deserialize(memStream);
-                return obj;
-            }
-        }
-
-        public void StartServer()
-        {
-            var config = new NetPeerConfiguration("MultiplayerGame2020") { Port = 14242 };
-            config.MaximumConnections = 4;
-            server = new NetServer(config);
-            server.Start();
-
-            if (server.Status == NetPeerStatus.Running)
-                Console.WriteLine("Server has started... \nPort: " + config.Port);
-            else
-                Console.WriteLine("Server unable to start...");
-
-            players = new List<Player>();
-        }
-
-        public void SendMessage(Player player, DataType dataType, Object message)
-        {
-            NetOutgoingMessage outMsg = server.CreateMessage();
-            outMsg.Write((byte)dataType);
-            outMsg.Write(ObjectToByteArray(message));
-            server.SendMessage(outMsg, player.netConnection, NetDeliveryMethod.ReliableOrdered);
-            Console.WriteLine("Sent message to {0} with {1} containing {2}", player, dataType, message);
-        }
-
-
-        public void SendMessageToAllPlayers(DataType dataType, Object message)
-        {
-            NetOutgoingMessage outMsg = server.CreateMessage();
-            outMsg.Write((byte)dataType);
-            outMsg.Write(ObjectToByteArray(message));
-
-            server.SendMessage(outMsg, server.Connections, NetDeliveryMethod.ReliableOrdered, 0);
-            Console.WriteLine($"Sent message to all players with {dataType} containing {message}");
-        }
-        #endregion
-
-        public void ReadMessages()
-        {
-            NetIncomingMessage incMsg;
-
-            while ((incMsg = server.ReadMessage()) != null)
-            {
-                switch (incMsg.MessageType)
+                if (player.disconnected)
                 {
-                    case NetIncomingMessageType.Data:
-                        {
-                            var playerID = incMsg.ReadByte();
-                            var dataType = incMsg.ReadByte();
-                            var message = ByteArrayToObject(incMsg.ReadBytes(incMsg.LengthBytes - 2));
-                            Console.WriteLine("Player{0} sent {1} containing: {2}", playerID, (DataType)dataType, message);
+                    Console.WriteLine($"Player{player.playerID} ({player.netConnection}) has disconnected!");
+                    if (gameActive)
+                    {
+                        player.disconnected = true;
+                        Console.WriteLine($"Changed Player{player.playerID}'s state to disconnected");
+                        player.alive = false;
+                        Console.WriteLine($"Changed Player{player.playerID}'s state to dead, will be removed from player list after the match");
+                        PlayerAlive(player.playerID, false);
+                    }
+                    else
+                    {
+                        players.Remove(player);
+                        Console.WriteLine($"Removed Player{player.playerID} from the player list");
+                        MM.SendMessageToAllClients(MessageManager.PacketType.PlayerDisconnected, player.playerID);
+                    }
 
-                            switch (dataType)
+                    return;
+                }
+            }
+            Console.WriteLine($"Unknown ({senderConnection}) disconnected!");
+
+        }
+        public void StartGame() // TODO: Seperate "Ready" and "Start" within this method, either with a string or bool
+        {
+
+        }
+        public void Direction()
+        {
+           
+        }
+        public void HeadPos(bool automatic)
+        {
+            foreach (Player player in players)
+            {
+                if (automatic)
+                {
+                    if (player.alive)
+                    {
+                        player.MoveHead();
+                        if (player.CollisionPlayer(players))
+                        {
+                            player.headPos = player.prevHeadPos;
+                            player.alive = false;
+                            Console.WriteLine($"Player{player.playerID} died");
+                            PlayerAlive(player.playerID, false);
+                        }
+                        else
+                        {
+                            player.MoveBody(this, blobs);
+                            // Debug
+                            foreach (var body in player.bodies)
                             {
-                                case (byte)DataType.GameInfo:
-
-                                    break;
-                                case (byte)DataType.Board:
-
-                                    break;
-                                case (byte)DataType.AddBlob:
-
-                                    break;
-                                case (byte)DataType.SubBlob:
-
-                                    break;
-                                case (byte)DataType.Direction:
-                                    if ((byte)message == ((byte)players[playerID - 1].prevDirection + 2) % 4 || (byte)message == (byte)players[playerID - 1].prevDirection)
-                                    {
-                                        Console.WriteLine("Player{0} direction change request ignored", playerID);
-                                        break;
-                                    }
-                                    players[playerID - 1].direction = (Player.Direction)message;
-                                    break;
-                                case (byte)DataType.HeadPos:
-
-                                    break;
-                                case (byte)DataType.TurnAction:
-
-                                    break;
+                                Console.WriteLine($"Body: {body.ToString()} position: {body.position}");
                             }
-
-
-
-
-                            break;
                         }
-                    #region Network
-                    case NetIncomingMessageType.DebugMessage:
-                        Console.WriteLine(incMsg.ReadString());
-                        break;
-                    case NetIncomingMessageType.StatusChanged:
-                        switch (incMsg.SenderConnection.Status)
-                        {
-                            case NetConnectionStatus.RespondedConnect:
-                                Console.WriteLine("Someone tries to connect...");
-                                break;
-
-                            case NetConnectionStatus.Connected:
-                                players.Add(new Player(incMsg.SenderConnection, (byte)(players.Count + 1)));
-                                Console.WriteLine("Player{0} has connected succesfully with {1}", players.Count, players[0].netConnection);
-                                SendMessage(players[players.Count - 1], DataType.GameInfo, "ID:" + players.Count);
-                                break;
-
-                            case NetConnectionStatus.Disconnecting: // TODO: Fix so that the game wont break when someone disconnects!
-                                {
-                                    foreach (Player player in players)
-                                    {
-                                        if (player.netConnection == incMsg.SenderConnection)
-                                        {
-                                            if (gameActive)
-                                            {
-                                                player.alive = false;
-                                            }
-                                            else players.Remove(player);
-                                            Console.WriteLine("Player{0} is disconnecting...", player.playerID);
-                                        }
-                                    }
-                                }
-                                break;
-
-                            case NetConnectionStatus.Disconnected:
-                                Console.WriteLine("Someone disconnected...!");
-                                break;
-                            default:
-                                Console.WriteLine("Unhandled message type: {0}", incMsg.SenderConnection.Status);
-                                break;
-                        }
-                        break;
-                    default:
-                        Console.WriteLine("Unhandled message type: {0}", incMsg.MessageType);
-                        break;
+                    }
+                    
                 }
-                server.Recycle(incMsg);
+                MM.SendMessageToAllClients(MessageManager.PacketType.HeadPos, player.playerID, player.headPos);
             }
-            #endregion
+        }
+        public void AddBlob(Point position)
+        {
+            blobs.Add(new Blob(position));
+            Console.WriteLine($"Manually added a blob at {position}");
+            MM.SendMessageToAllClients(MessageManager.PacketType.AddBlob, position);
+        }
+        public void AddBlob()
+        {
+            blobs.Add(new Blob(blobs, players, grid));
+            Console.WriteLine($"Spawned a blob at {blobs[blobs.Count - 1].position}");
+            MM.SendMessageToAllClients(MessageManager.PacketType.AddBlob, blobs[blobs.Count-1].position);
+        }
+        public void SubBlobAddBody(Point blobPosition, byte playerID) // Used in Player.cs
+        {
+            MM.SendMessageToAllClients(MessageManager.PacketType.SubBlobAddbody, playerID, blobPosition);
+        }
+        public void PlayerAlive(byte playerID, bool alive) // Used in Player.cs
+        {
+            MM.SendMessageToAllClients(MessageManager.PacketType.PlayerAlive, playerID, alive);
+        }
+        public void EndGame() // TODO: Make all disconnected players removed after a game
+        {
 
         }
+
+
+        #endregion Network Methods
+        
     }
 }

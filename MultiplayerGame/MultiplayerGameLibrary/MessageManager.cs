@@ -16,8 +16,8 @@ namespace MultiplayerGameLibrary
         private NetServer server;
         private NetClient client;
 
-        MessageManager(NetServer server) { this.server = server; }
-        MessageManager(NetClient client) { this.client = client; }
+        public MessageManager(NetServer server) { this.server = server; }
+        public MessageManager(NetClient client) { this.client = client; }
 
         public enum PacketType : byte
         {
@@ -37,53 +37,53 @@ namespace MultiplayerGameLibrary
             PlayerAlive,    // Collision with player
             EndGame         // End the game
         }
-        PacketType packetType;
+        public PacketType packetType;
 
 
-        public void SendMessageToClient(Player player, PacketType dataType, Object message)
+        public void SendMessageToClient(Player player, PacketType packetType, Object message)
         {
             NetOutgoingMessage outMsg = server.CreateMessage();
-            outMsg.Write((byte)dataType);
+            outMsg.Write((byte)packetType);
             outMsg.Write(ObjectToByteArray(message));
             server.SendMessage(outMsg, player.netConnection, NetDeliveryMethod.ReliableOrdered);
-            Console.WriteLine($"Sent message to {player} with {dataType} containing {message}");
+            Console.WriteLine($"Sent message to {player} with {packetType} containing {message}");
         }
 
-        public void SendMessageToAllClients(PacketType dataType, byte playerID, Object message)
+        public void SendMessageToAllClients(PacketType packetType, byte playerID, Object message)
         {
             NetOutgoingMessage outMsg = server.CreateMessage();
-            outMsg.Write((byte)dataType);
+            outMsg.Write((byte)packetType);
             outMsg.Write(playerID);
             outMsg.Write(ObjectToByteArray(message));
 
             server.SendMessage(outMsg, server.Connections, NetDeliveryMethod.ReliableOrdered, 0);
-            Console.WriteLine($"Sent message to all clients with {dataType} about player{playerID} containing {message}");
+            Console.WriteLine($"Sent message to all clients with {packetType} about player{playerID} containing {message}");
         }
 
-        public void SendMessageToAllClients(PacketType dataType, Object message)
+        public void SendMessageToAllClients(PacketType packetType, Object message)
         {
             NetOutgoingMessage outMsg = server.CreateMessage();
-            outMsg.Write((byte)dataType);
+            outMsg.Write((byte)packetType);
             outMsg.Write(0);
             outMsg.Write(ObjectToByteArray(message));
 
             server.SendMessage(outMsg, server.Connections, NetDeliveryMethod.ReliableOrdered, 0);
-            Console.WriteLine($"Sent message to all clients with {dataType} containing {message}");
+            Console.WriteLine($"Sent message to all clients with {packetType} containing {message}");
         }
 
-        public void SendMessageToServer(byte playerID, PacketType dataType, Object message)
+        public void SendMessageToServer(byte playerID, PacketType packetType, Object message)
         {
             NetOutgoingMessage outMsg = client.CreateMessage();
             outMsg.Write(playerID);
-            outMsg.Write((byte)dataType);
+            outMsg.Write((byte)packetType);
             outMsg.Write(ObjectToByteArray(message));
             client.SendMessage(outMsg, NetDeliveryMethod.ReliableOrdered);
             client.FlushSendQueue();
-            Console.WriteLine($"Sent message to server as player{playerID} with {dataType} containing {message}");
+            Console.WriteLine($"Sent message to server as player{playerID} with {packetType} containing {message}");
         }
 
 
-        public void ReadServerMessages()
+        public void ReadServerMessages(Client gameClient)
         {
             NetIncomingMessage incMsg;
             while ((incMsg = server.ReadMessage()) != null)
@@ -171,7 +171,7 @@ namespace MultiplayerGameLibrary
             }
         }
 
-        public void ReadClientMessages(Server server)
+        public void ReadClientMessages(Server gameServer)
         {
             NetIncomingMessage incMsg;
             while ((incMsg = server.ReadMessage()) != null)
@@ -216,33 +216,11 @@ namespace MultiplayerGameLibrary
                                 break;
 
                             case NetConnectionStatus.Connected:
-                                players.Add(new Player(incMsg.SenderConnection, (byte)(players.Count + 1)));
-                                Console.WriteLine("Player{0} has connected succesfully with {1}", players.Count, players[0].netConnection);
-                                SendMessageToClient(players[players.Count - 1], PacketType.GameInfo, "ID:" + players.Count);
-                                break;
-
-                            case NetConnectionStatus.Disconnecting: // TODO: Fix so that the game wont break when someone disconnects!
-                                {
-                                    foreach (Player player in players)
-                                    {
-                                        if (player.netConnection == incMsg.SenderConnection)
-                                        {
-                                            Console.WriteLine($"Player{player.playerID} ({incMsg.SenderConnection}) is disconnecting...");
-                                        }
-                                    }
-                                }
+                                gameServer.PlayerConnected(incMsg.SenderConnection);
                                 break;
 
                             case NetConnectionStatus.Disconnected:
-                                foreach (Player player in players)
-                                {
-                                    if (player.netConnection == incMsg.SenderConnection)
-                                    {
-                                        Console.WriteLine($"Player{player.playerID} ({incMsg.SenderConnection}) has disconnected!");
-                                        break;
-                                    }
-                                }
-                                Console.WriteLine($"Unknown ({incMsg.SenderConnection}) disconnected!");
+                                gameServer.PlayerDisconnected(incMsg.SenderConnection);
                                 break;
                             default:
                                 Console.WriteLine($"Unhandled message type: {incMsg.SenderConnection.Status}");
@@ -257,95 +235,6 @@ namespace MultiplayerGameLibrary
                 server.Recycle(incMsg);
             }
         }
-
-        //public void ReadMessages()
-        //{
-        //    NetIncomingMessage incMsg;
-
-        //    while ((incMsg = server.ReadMessage()) != null)
-        //    {
-        //        switch (incMsg.MessageType)
-        //        {
-        //            case NetIncomingMessageType.Data:
-        //                {
-        //                    var playerID = incMsg.ReadByte();
-        //                    PacketType packetType = (PacketType)incMsg.ReadByte();
-        //                    var message = ByteArrayToObject(incMsg.ReadBytes(incMsg.LengthBytes - 2));
-        //                    Console.WriteLine($"Player{playerID} sent {packetType} containing: {message}");
-
-        //                    switch (packetType)
-        //                    {
-        //                        case PacketType.GameInfo:
-
-        //                            break;
-        //                        case PacketType.Direction:
-        //                            if ((byte)message == ((byte)players[playerID - 1].prevDirection + 2) % 4 || (byte)message == (byte)players[playerID - 1].prevDirection)
-        //                            {
-        //                                Console.WriteLine($"Player{playerID} direction change request ignored");
-        //                                break;
-        //                            }
-        //                            players[playerID - 1].direction = (Player.Direction)message;
-        //                            break;
-        //                        default:
-        //                            Console.WriteLine($"Unhandled packageType: {packetType}");
-        //                            break;
-        //                    }
-        //                    break;
-        //                }
-        //            #region Network
-        //            case NetIncomingMessageType.DebugMessage:
-        //                Console.WriteLine(incMsg.ReadString());
-        //                break;
-        //            case NetIncomingMessageType.StatusChanged:
-        //                switch (incMsg.SenderConnection.Status)
-        //                {
-        //                    case NetConnectionStatus.RespondedConnect:
-        //                        Console.WriteLine("Someone tries to connect...");
-        //                        break;
-
-        //                    case NetConnectionStatus.Connected:
-        //                        players.Add(new Player(incMsg.SenderConnection, (byte)(players.Count + 1)));
-        //                        Console.WriteLine("Player{0} has connected succesfully with {1}", players.Count, players[0].netConnection);
-        //                        SendMessageToClient(players[players.Count - 1], PacketType.GameInfo, "ID:" + players.Count);
-        //                        break;
-
-        //                    case NetConnectionStatus.Disconnecting: // TODO: Fix so that the game wont break when someone disconnects!
-        //                        {
-        //                            foreach (Player player in players)
-        //                            {
-        //                                if (player.netConnection == incMsg.SenderConnection)
-        //                                {
-        //                                    Console.WriteLine($"Player{player.playerID} ({incMsg.SenderConnection}) is disconnecting...");
-        //                                }
-        //                            }
-        //                        }
-        //                        break;
-
-        //                    case NetConnectionStatus.Disconnected:
-        //                        foreach (Player player in players)
-        //                        {
-        //                            if (player.netConnection == incMsg.SenderConnection)
-        //                            {
-        //                                Console.WriteLine($"Player{player.playerID} ({incMsg.SenderConnection}) has disconnected!");
-        //                                break;
-        //                            }
-        //                        }
-        //                        Console.WriteLine($"Unknown ({incMsg.SenderConnection}) disconnected!");
-        //                        break;
-        //                    default:
-        //                        Console.WriteLine($"Unhandled message type: {incMsg.SenderConnection.Status}");
-        //                        break;
-        //                }
-        //                break;
-        //            default:
-        //                Console.WriteLine($"Unhandled message type: {incMsg.MessageType}");
-        //                break;
-        //        }
-        //        server.Recycle(incMsg);
-        //    }
-        //    #endregion
-
-        //}
 
         // Convert an Object to a byte array
         private static byte[] ObjectToByteArray(Object obj)

@@ -9,6 +9,7 @@ namespace MultiplayerGameLibrary
     {
         public NetConnection netConnection; //Server
         public byte playerID;
+        public bool disconnected = false;
 
         public bool ready = false;
 
@@ -44,7 +45,7 @@ namespace MultiplayerGameLibrary
 
         public Player(byte ID) { playerID = ID; }
 
-        public void Move() // Server
+        public void MoveHead() // Server
         {
             prevHeadPos = headPos;
             prevDirection = direction;
@@ -66,7 +67,6 @@ namespace MultiplayerGameLibrary
 
             if (CollisionWall()) Console.WriteLine($"Player{playerID} has moved {direction} outside the grid to {headPos}");
             else Console.WriteLine($"Player{playerID} has moved {direction} to {headPos}");
-
         }
 
         public void NewPosition(Point position) // Client
@@ -100,7 +100,7 @@ namespace MultiplayerGameLibrary
             else return false;
         }
 
-        public bool CollisionBlob(List<Blob> blobs)
+        private bool CollisionBlob(Server gameServer, List<Blob> blobs) // Is included in MoveBody()
         {
             foreach (Blob blob in blobs)
             {
@@ -108,6 +108,7 @@ namespace MultiplayerGameLibrary
                 {
                     blobs.Remove(blob);
                     Console.WriteLine($"Player{playerID} has eaten a blob at {blob.position}");
+                    gameServer.SubBlobAddBody(blob.position, playerID);
                     return true;
                 }
             }
@@ -118,9 +119,9 @@ namespace MultiplayerGameLibrary
         /// Moves the body forward, deletes last and adds a body at prevHeadPos
         /// </summary>
         /// <param name="If player has eaten blob, it only adds a body and a point"></param>
-        public void MoveBody(bool eatBlob)
+        public void MoveBody(Server gameServer, List<Blob> blobs)
         {
-            if (eatBlob)
+            if (CollisionBlob(gameServer, blobs))
             {
                 bodies.Add(new Body(prevHeadPos, ++score));
                 Console.WriteLine($"Player{playerID} recived a new body at {prevHeadPos} and has current score: {score}");
@@ -131,32 +132,31 @@ namespace MultiplayerGameLibrary
                 body.SubLife();
                 if (body.life <= 0)
                 {
-                    body.position = prevHeadPos;
-                    body.life = score;
+                    bodies.Remove(body);
+                    bodies.Add(new Body(prevHeadPos, score));
                 }
             }
         }
 
-        public void CollisionPlayer(List<Player> players)
+        public bool CollisionPlayer(List<Player> players)
         {
             foreach (Player player in players)
             {
                 if (headPos == player.headPos && playerID != player.playerID)
                 {
-                    alive = false;
-                    Console.WriteLine($"Player{playerID} collided with Player{player.playerID} at {headPos}");
-                    return;
+                    Console.WriteLine($"Player{playerID} collided with Player{player.playerID} head at {headPos}");
+                    return true;
                 }
                 foreach (Body body in player.bodies)
                 {
                     if (headPos == body.position)
                     {
-                        alive = false;
                         Console.WriteLine($"Player{playerID} collided with Player{player.playerID} body at {headPos}");
-                        return;
+                        return true;
                     }
                 }
             }
+            return false;
 
         }
 
