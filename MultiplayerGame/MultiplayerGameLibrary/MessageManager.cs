@@ -104,12 +104,7 @@ namespace MultiplayerGameLibrary
 
                                     break;
                                 case PacketType.Direction:
-                                    if ((byte)message == ((byte)players[playerID - 1].prevDirection + 2) % 4 || (byte)message == (byte)players[playerID - 1].prevDirection)
-                                    {
-                                        Console.WriteLine($"Player{playerID} direction change request ignored");
-                                        break;
-                                    }
-                                    players[playerID - 1].direction = (Player.Direction)message;
+
                                     break;
                                 default:
                                     Console.WriteLine($"Unhandled packetType: {packetType}");

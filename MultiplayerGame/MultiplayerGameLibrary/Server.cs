@@ -22,6 +22,7 @@ namespace MultiplayerGameLibrary
         private List<Blob> blobs = new List<Blob>();
 
 
+
         public void Initialize()
         {
             MM = new MessageManager(server);
@@ -39,58 +40,46 @@ namespace MultiplayerGameLibrary
 
         public void GameRun()
         {
+            if (!gameActive)
+            {
+                gameActive = AllPlayersReady();
+            }
+
             turnManager.UpdateTimeDiff();
             if (gameActive)
             {
                 turnManager.UpdateTurn();
                 if (turnManager.nextTurn)
                 {
-                    players[0].alive = true;
-                    players[0].board = grid;
-                    foreach (Player player in players)
-                    {
-                        if (player.alive)
-                        {
-                            player.MoveHead();
-                            if (player.CollisionBlob(blobs))
-                            {
-                                player.MoveBody(true);
-                            }
-                            else player.MoveBody(false);
-                            foreach (var body in player.bodies)
-                            {
-                                Console.WriteLine($"Body position: {body.position}");
-                            }
-                            player.CollisionPlayer(players);
-                        }
-
-                    }
-                    if (blobs.Count == 0)
-                        blobs.Add(new Blob(blobs, players, grid));
+                    SendPlayerData(true);
+                    if (blobs.Count == 0) AddBlob();
                     Console.WriteLine($"New blob position: {blobs[blobs.Count - 1].position}");
-
-                    SendEndTurnData();
+                    
                 }
             }
         }
 
         public void RestartGame()
         {
+            gameActive = false;
+            EndGame();
             foreach (Player player in players)
             {
                 player.Reset(grid);
             }
+            SendPlayerData(false);
+            ChangeGridData(grid);
             blobs.Clear();
             if (grid.X % 2 == 1)
             {
-                blobs.Add(new Blob(new Point((grid.X + 1) / 2, (grid.Y + 1) / 2)));
+                AddBlob(new Point((grid.X + 1) / 2, (grid.Y + 1) / 2));
             }
             if (grid.X % 2 == 0)
             {
-                blobs.Add(new Blob(new Point(grid.X / 2, grid.Y / 2)));
-                blobs.Add(new Blob(new Point(grid.X / 2 + 1, grid.Y / 2)));
-                blobs.Add(new Blob(new Point(grid.X / 2, grid.Y / 2 + 1)));
-                blobs.Add(new Blob(new Point(grid.X / 2 + 1, grid.Y / 2 + 1)));
+                AddBlob(new Point(grid.X / 2, grid.Y / 2));
+                AddBlob(new Point(grid.X / 2 + 1, grid.Y / 2));
+                AddBlob(new Point(grid.X / 2, grid.Y / 2 + 1));
+                AddBlob(new Point(grid.X / 2 + 1, grid.Y / 2 + 1));
             }
 
         }
@@ -98,41 +87,31 @@ namespace MultiplayerGameLibrary
 
         public void SendEndTurnData()
         {
-            foreach (Player player in players)
-            {
-                if (player.alive)
-                {
-                    MM.SendMessageToAllClients(MessageManager.PacketType.HeadPos, player.playerID, player.headPos);
-                    SendMessageToAllPlayers(DataType.HeadPos, "Y:" + player.headPos.Y);
-                    if (player.CollisionBlob(blobs))
-                    {
-                        SendMessageToAllPlayers(DataType.SubBlob, $"BlobX:{player.collidedBlob.position.X}");
-                        SendMessageToAllPlayers(DataType.SubBlob, $"BlobY:{player.collidedBlob.position.Y}");
 
-                        SendMessageToAllPlayers(DataType.TurnAction, $"Player{player.playerID}: BODY");
-                    }
-                }
-                else SendMessageToAllPlayers(DataType.TurnAction, $"Player{player.playerID}: DEAD");
-
-            }
-            foreach (Blob blob in blobs)
-            {
-
-            }
         }
 
+        public bool AllPlayersReady()
+        {
+            int allPlayersReady = 0;
+            foreach (Player player in players) if (player.ready) allPlayersReady++;
+            if (players.Count == allPlayersReady)
+            {
+                SendStartGame(true);
+                return true;
+            }
+            else return false;
+        }
 
-
-        #region Network Methods
-        public void GeneralData(Player player, object data)
+        #region GameLogic + Network Methods
+        public void SendGeneralData(Player player, object data)
         {
             MM.SendMessageToClient(player, MessageManager.PacketType.GeneralData, data);
         }
-        public void GeneralData(object data)
+        public void SendGeneralData(object data)
         {
             MM.SendMessageToAllClients(MessageManager.PacketType.GeneralData, data);
         }
-        public void GridData(Point newGridSize)
+        public void ChangeGridData(Point newGridSize)
         {
             grid = newGridSize;
             Console.WriteLine($"Changed gridsize to {grid}");
@@ -143,7 +122,7 @@ namespace MultiplayerGameLibrary
             players.Add(new Player(netConnection, (byte)(players.Count + 1)));
             Console.WriteLine($"Player connected with {netConnection} and has now the ID as {players.Count}");
             MM.SendMessageToClient(players[players.Count-1], MessageManager.PacketType.GeneralData, "ID:" + players.Count);
-            GeneralData(players[players.Count - 1], "ID:" + players.Count);
+            SendGeneralData(players[players.Count - 1], "ID:" + players.Count);
             MM.SendMessageToAllClients(MessageManager.PacketType.PlayerConnected, (byte)players.Count, netConnection);
         }
         public void PlayerDisconnected(NetConnection senderConnection)
@@ -159,7 +138,7 @@ namespace MultiplayerGameLibrary
                         Console.WriteLine($"Changed Player{player.playerID}'s state to disconnected");
                         player.alive = false;
                         Console.WriteLine($"Changed Player{player.playerID}'s state to dead, will be removed from player list after the match");
-                        PlayerAlive(player.playerID, false);
+                        SendPlayerAlive(player.playerID, false);
                     }
                     else
                     {
@@ -187,7 +166,7 @@ namespace MultiplayerGameLibrary
                         Console.WriteLine($"Changed Player{player.playerID}'s state to disconnected");
                         player.alive = false;
                         Console.WriteLine($"Changed Player{player.playerID}'s state to dead, will be removed from player list after the match");
-                        PlayerAlive(player.playerID, false);
+                        SendPlayerAlive(player.playerID, false);
                     }
                     else
                     {
@@ -199,22 +178,31 @@ namespace MultiplayerGameLibrary
                     return;
                 }
             }
-            Console.WriteLine($"Unknown ({senderConnection}) disconnected!");
+            Console.WriteLine($"Error: Unhandled disconnection!");
 
         }
-        public void StartGame() // TODO: Seperate "Ready" and "Start" within this method, either with a string or bool
+        public void SendStartGame(bool ready)
         {
-
+            if (ready) MM.SendMessageToAllClients(MessageManager.PacketType.StartGame, "Ready");
+            else MM.SendMessageToAllClients(MessageManager.PacketType.StartGame, "Start");
+            
         }
-        public void Direction()
+        public void ReciveDirection(byte playerID, Player.Direction newDirection)
         {
-           
+            if(gameActive)
+            {
+                players[playerID - 1].ChangeDirection(newDirection);
+            }
+            else
+            {
+                players[playerID - 1].ready = true;
+            }
         }
-        public void HeadPos(bool automatic)
+        public void SendPlayerData(bool automaticallyUpdate)
         {
             foreach (Player player in players)
             {
-                if (automatic)
+                if (automaticallyUpdate)
                 {
                     if (player.alive)
                     {
@@ -224,19 +212,18 @@ namespace MultiplayerGameLibrary
                             player.headPos = player.prevHeadPos;
                             player.alive = false;
                             Console.WriteLine($"Player{player.playerID} died");
-                            PlayerAlive(player.playerID, false);
+                            SendPlayerAlive(player.playerID, false);
                         }
                         else
                         {
                             player.MoveBody(this, blobs);
-                            // Debug
-                            foreach (var body in player.bodies)
+                           
+                            foreach (var body in player.bodies) // Debug
                             {
                                 Console.WriteLine($"Body: {body.ToString()} position: {body.position}");
                             }
                         }
                     }
-                    
                 }
                 MM.SendMessageToAllClients(MessageManager.PacketType.HeadPos, player.playerID, player.headPos);
             }
@@ -253,21 +240,24 @@ namespace MultiplayerGameLibrary
             Console.WriteLine($"Spawned a blob at {blobs[blobs.Count - 1].position}");
             MM.SendMessageToAllClients(MessageManager.PacketType.AddBlob, blobs[blobs.Count-1].position);
         }
-        public void SubBlobAddBody(Point blobPosition, byte playerID) // Used in Player.cs
+        public void SendSubBlobAddBody(Point blobPosition, byte playerID) // Used in Player.cs
         {
             MM.SendMessageToAllClients(MessageManager.PacketType.SubBlobAddbody, playerID, blobPosition);
         }
-        public void PlayerAlive(byte playerID, bool alive) // Used in Player.cs
+        public void SendPlayerAlive(byte playerID, bool alive) // Used in Player.cs
         {
             MM.SendMessageToAllClients(MessageManager.PacketType.PlayerAlive, playerID, alive);
         }
         public void EndGame() // TODO: Make all disconnected players removed after a game
         {
-
+            gameActive = false;
+            Console.WriteLine($"Ended game, changed gameActive to false");
+            MM.SendMessageToAllClients(MessageManager.PacketType.EndGame, "EndGame");
+            PlayerDisconnected(); // All players who disconnected during a match
         }
 
 
-        #endregion Network Methods
-        
+        #endregion GameLogic + Network Methods
+
     }
 }

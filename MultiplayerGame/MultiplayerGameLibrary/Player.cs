@@ -45,6 +45,13 @@ namespace MultiplayerGameLibrary
 
         public Player(byte ID) { playerID = ID; }
 
+        public void ChangeDirection(Direction newDirection)
+        {
+            if ((byte)newDirection == (byte)(prevDirection + 2 % 4) || (byte)newDirection == (byte)prevDirection) return;
+            else direction = newDirection;
+            Console.WriteLine($"Player{playerID} changed direction to {direction}");
+        }
+
         public void MoveHead() // Server
         {
             prevHeadPos = headPos;
@@ -108,7 +115,7 @@ namespace MultiplayerGameLibrary
                 {
                     blobs.Remove(blob);
                     Console.WriteLine($"Player{playerID} has eaten a blob at {blob.position}");
-                    gameServer.SubBlobAddBody(blob.position, playerID);
+                    gameServer.SendSubBlobAddBody(blob.position, playerID);
                     return true;
                 }
             }
@@ -170,6 +177,7 @@ namespace MultiplayerGameLibrary
             bodies.Clear();
             alive = true;
             score = 0;
+            ready = false;
             Console.WriteLine($"Player{playerID} has been reset");
 
             switch (playerID)
