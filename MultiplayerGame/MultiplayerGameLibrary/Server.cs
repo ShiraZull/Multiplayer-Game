@@ -27,9 +27,24 @@ namespace MultiplayerGameLibrary
 
         public void Initialize()
         {
+            StartServer();
             MM = new MessageManager(server);
             players = new List<Player>(4);
             turnManager = new TurnManager(turnDelay, startCountdown);
+        }
+
+
+        public void StartServer()
+        {
+            var config = new NetPeerConfiguration("MultiplayerGame2020") { Port = 14242 };
+            config.MaximumConnections = 4;
+            server = new NetServer(config);
+            server.Start();
+
+            if (server.Status == NetPeerStatus.Running)
+                Console.WriteLine("Server has started... \nPort: " + config.Port);
+            else
+                Console.WriteLine("Server unable to start...");
         }
 
 
@@ -39,6 +54,8 @@ namespace MultiplayerGameLibrary
             Console.WriteLine($"Added blob at {blobs[0].position}");
 
         }
+
+
 
         public void GameRun()
         {

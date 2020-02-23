@@ -29,12 +29,16 @@ namespace MultiplayerGameLibrary
 
         public void Initialize()
         {
+            StartClient();
             MM = new MessageManager(client);
             players = new List<Player>(4);
             turnManager = new TurnManager(startCountdown);
         }
 
-
+        public void Update(GameTime gameTime)
+        {
+            MM.ReadServerMessages(this);
+        }
 
         // GameBoard
         public int gridSize = 6;
@@ -128,6 +132,17 @@ namespace MultiplayerGameLibrary
         }
 
 
+        public void StartClient()
+        {
+            var config = new NetPeerConfiguration("MultiplayerGame2020");
+            config.AutoFlushSendQueue = false;
+            client = new NetClient(config);
+            client.Start();
+
+            string ip = "localhost";
+            int port = 14242;
+            client.Connect(ip, port);
+        }
 
 
 
