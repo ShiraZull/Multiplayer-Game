@@ -29,7 +29,7 @@ namespace MultiplayerGameLibrary
         public Direction prevDirection; //Server
 
         public Point grid;
-        public Blob collidedBlob;
+        public bool eatenBlob; // Client
 
         /// <summary>
         /// A contruct that add another player/client to the game/server
@@ -125,11 +125,35 @@ namespace MultiplayerGameLibrary
         /// <summary>
         /// Moves the body forward, deletes last and adds a body at prevHeadPos
         /// </summary>
-        /// <param name="If player has eaten blob, it only adds a body and a point"></param>
+        /// <param name="If player has eaten blob, it adds a body and a point"></param>
         public void MoveBody(Server gameServer, List<Blob> blobs)
         {
             if (CollisionBlob(gameServer, blobs))
             {
+                bodies.Add(new Body(prevHeadPos, ++score));
+                Console.WriteLine($"Player{playerID} recived a new body at {prevHeadPos} and has current score: {score}");
+                return;
+            }
+            foreach (var body in bodies)
+            {
+                body.SubLife();
+                if (body.life <= 0)
+                {
+                    bodies.Remove(body);
+                    bodies.Add(new Body(prevHeadPos, score));
+                }
+            }
+        }
+
+        /// <summary>
+        /// Moves the body forward, deletes last and adds a body at prevHeadPos
+        /// </summary>
+        /// <param name="If player has eaten blob, it adds a body and a point"></param>
+        public void MoveBody()
+        {
+            if (eatenBlob)
+            {
+                eatenBlob = false;
                 bodies.Add(new Body(prevHeadPos, ++score));
                 Console.WriteLine($"Player{playerID} recived a new body at {prevHeadPos} and has current score: {score}");
                 return;
@@ -164,7 +188,6 @@ namespace MultiplayerGameLibrary
                 }
             }
             return false;
-
         }
 
         /// <summary>

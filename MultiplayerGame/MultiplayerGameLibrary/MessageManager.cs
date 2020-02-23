@@ -126,56 +126,37 @@ namespace MultiplayerGameLibrary
                             switch (packetType)
                             {
                                 case PacketType.GeneralData:
-                                    // If message contains ID:i, extract the number i and put it as playerID
-                                    if (message.ToString().StartsWith("ID:"))
-                                    {
-                                        byte i = 1;
-                                        while (i <= 4)
-                                        {
-                                            if (message.ToString().EndsWith(i.ToString()))
-                                            {
-                                                playerID = i;
-                                                Console.WriteLine($"Made playerID as {playerID}");
-                                                for (int a = 0; a < i; a++)
-                                                {
-                                                    gameClient.players.Add(new Player((byte)(a + 1)));
-                                                }
-                                                Console.WriteLine($">>> There is currently {gameClient.players.Count} players in 'players'");
-                                                break;
-                                            }
-                                            i++;
-                                        }
-                                    }
+                                    gameClient.ReadGeneralData(message);
                                     break;
                                 case PacketType.GridData:
-
+                                    gameClient.ReadGridData((Point)message);
                                     break;
                                 case PacketType.PlayerConnected:
-
+                                    gameClient.ReadPlayerConnected(playerID, (NetConnection)message);
                                     break;
                                 case PacketType.PlayerDisconnected:
-
+                                    gameClient.ReadPlayerDisconnected(playerID);
                                     break;
                                 case PacketType.StartGame:
-
-                                    break;
-                                case PacketType.Direction:
-
+                                    if ((string)message == "Ready") gameClient.ReadStartGame(true);
+                                    else if ((string)message == "Start") gameClient.ReadStartGame(false);
+                                    else Console.WriteLine($"Unhandled StartGame Type: {message}");
+                                    
                                     break;
                                 case PacketType.HeadPos:
-
+                                    gameClient.ReadHeadPos(playerID, (Point)message);
                                     break;
                                 case PacketType.AddBlob:
-
+                                    gameClient.ReadAddBlob((Point)message);
                                     break;
                                 case PacketType.SubBlobAddbody:
-
+                                    gameClient.ReadSubBlobAddBody((Point)message, playerID);
                                     break;
                                 case PacketType.PlayerAlive:
-
+                                    gameClient.ReadPlayerAlive(playerID, (bool)message);
                                     break;
                                 case PacketType.EndGame:
-
+                                    gameClient.ReadEndGame();
                                     break;
                                 default:
                                     Console.WriteLine($"Unhandled packetType: {packetType}");

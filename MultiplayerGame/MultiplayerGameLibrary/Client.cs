@@ -24,6 +24,7 @@ namespace MultiplayerGameLibrary
         private List<Blob> blobs = new List<Blob>();
         private TurnManager turnManager;
         private int startCountdown = 3000;
+        private bool allPlayersReady = false;
 
 
         public void Initialize()
@@ -135,9 +136,28 @@ namespace MultiplayerGameLibrary
         {
             MM.SendMessageToServer(playerID, MessageManager.PacketType.GeneralData, data);
         }
-        public void ReadGeneralData() // TODO: Work?
+        public void ReadGeneralData(object message)
         {
-            
+            // If message contains ID:i, extract the number i and put it as playerID
+            if (message.ToString().StartsWith("ID:"))
+            {
+                byte i = 1;
+                while (i <= 4)
+                {
+                    if (message.ToString().EndsWith(i.ToString()))
+                    {
+                        playerID = i;
+                        Console.WriteLine($"Made playerID as {playerID}");
+                        for (int a = 0; a < i; a++)
+                        {
+                            players.Add(new Player((byte)(a + 1)));
+                        }
+                        Console.WriteLine($">>> There is currently {players.Count} players in 'players'");
+                        break;
+                    }
+                    i++;
+                }
+            }
         }
         public void ReadGridData(Point newGridSize)
         {
@@ -167,70 +187,43 @@ namespace MultiplayerGameLibrary
         } 
         public void ReadStartGame(bool ready)
         {
-            if (ready) 
-            else 
+            if (ready) allPlayersReady = true;
+            else gameActive = true;
 
         } //TODO: Check if this works
         public void SendDirection(Player.Direction newDirection)
         {
             MM.SendMessageToServer(playerID, MessageManager.PacketType.Direction, newDirection);
         } 
-        public void SendPlayerData(bool automaticallyUpdate)
+        public void ReadHeadPos(byte playerID, Point newHeadPos)
         {
-            foreach (Player player in players)
-            {
-                if (automaticallyUpdate)
-                {
-                    if (player.alive)
-                    {
-                        player.MoveHead();
-                        if (player.CollisionPlayer(players))
-                        {
-                            player.headPos = player.prevHeadPos;
-                            player.alive = false;
-                            Console.WriteLine($"Player{player.playerID} died");
-                            SendPlayerAlive(player.playerID, false);
-                        }
-                        else
-                        {
-                            player.MoveBody(this, blobs);
-
-                            foreach (var body in player.bodies) // Debug
-                            {
-                                Console.WriteLine($"Body: {body.ToString()} position: {body.position}");
-                            }
-                        }
-                    }
-                }
-                MM.SendMessageToAllClients(MessageManager.PacketType.HeadPos, player.playerID, player.headPos);
-            }
-        } //TODO: Check if this works
-        public void AddBlob(Point position)
+            players[playerID - 1].NewPosition(newHeadPos);
+        }
+        public void ReadAddBlob(Point position)
         {
             blobs.Add(new Blob(position));
-            Console.WriteLine($"Manually added a blob at {position}");
-            MM.SendMessageToAllClients(MessageManager.PacketType.AddBlob, position);
-        } //TODO: Check if this works
-        public void AddBlob()
+            Console.WriteLine($"Added a blob at {position}");
+        } 
+        public void ReadSubBlobAddBody(Point blobPosition, byte playerID)
         {
-            blobs.Add(new Blob(blobs, players, grid));
-            Console.WriteLine($"Spawned a blob at {blobs[blobs.Count - 1].position}");
-            MM.SendMessageToAllClients(MessageManager.PacketType.AddBlob, blobs[blobs.Count - 1].position);
-        } //TODO: Check if this works
-        public void SendSubBlobAddBody(Point blobPosition, byte playerID) // Used in Player.cs
+            foreach (Blob blob in blobs)
+            {
+                if (blob.position == blobPosition)
+                {
+                    blobs.Remove(blob);
+                }
+            }
+            players[playerID - 1].eatenBlob = true;
+            
+        }
+        public void ReadPlayerAlive(byte playerID, bool alive)
         {
-            MM.SendMessageToAllClients(MessageManager.PacketType.SubBlobAddbody, playerID, blobPosition);
-        } //TODO: Check if this works
-        public void SendPlayerAlive(byte playerID, bool alive) // Used in Player.cs
-        {
-            MM.SendMessageToAllClients(MessageManager.PacketType.PlayerAlive, playerID, alive);
-        } //TODO: Check if this works
-        public void EndGame()
+            players[playerID - 1].alive = alive;
+        }
+        public void ReadEndGame()
         {
             gameActive = false;
             Console.WriteLine($"Ended game, changed gameActive to false");
-            MM.SendMessageToAllClients(MessageManager.PacketType.EndGame, "EndGame");
-            PlayerDisconnected(); // All players who disconnected during a match
         } //TODO: Check if this works
         #endregion GameLogic + Network Methods
 

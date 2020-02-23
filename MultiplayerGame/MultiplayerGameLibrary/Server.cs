@@ -144,7 +144,7 @@ namespace MultiplayerGameLibrary
                     {
                         players.Remove(player);
                         Console.WriteLine($"Removed Player{player.playerID} from the player list");
-                        MM.SendMessageToAllClients(MessageManager.PacketType.PlayerDisconnected, player.playerID);
+                        MM.SendMessageToAllClients(MessageManager.PacketType.PlayerDisconnected, player.playerID, "Disconnected");
                     }
 
                     return;
