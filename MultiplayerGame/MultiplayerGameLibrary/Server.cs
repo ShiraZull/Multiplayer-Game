@@ -59,6 +59,7 @@ namespace MultiplayerGameLibrary
 
         public void GameRun()
         {
+            MM.ReadClientMessages(this);
             if (!gameActive)
             {
                 gameActive = AllPlayersReady();
@@ -72,7 +73,6 @@ namespace MultiplayerGameLibrary
                 {
                     SendPlayerData(true);
                     if (blobs.Count == 0) AddBlob();
-                    Console.WriteLine($"New blob position: {blobs[blobs.Count - 1].position}");
                     
                 }
             }
@@ -139,8 +139,8 @@ namespace MultiplayerGameLibrary
         {
             players.Add(new Player(netConnection, (byte)(players.Count + 1)));
             Console.WriteLine($"New player connected with {netConnection} and has now the ID as {players.Count}");
-            SendGeneralData(players[players.Count - 1], "ID:" + players.Count);
-            MM.SendMessageToAllClients(MessageManager.PacketType.PlayerConnected, (byte)players.Count, netConnection);
+            SendGeneralData(players[players.Count - 1], (string)("ID:" + players.Count.ToString()));
+            MM.SendMessageToAllClients(MessageManager.PacketType.PlayerConnected, (byte)players.Count);
         }
         public void PlayerDisconnected(NetConnection senderConnection)
         {
@@ -204,11 +204,11 @@ namespace MultiplayerGameLibrary
             else MM.SendMessageToAllClients(MessageManager.PacketType.StartGame, "Start");
             
         }
-        public void ReadDirection(byte playerID, Player.Direction newDirection)
+        public void ReadDirection(byte playerID, byte newDirection)
         {
             if(gameActive)
             {
-                players[playerID - 1].ChangeDirection(newDirection);
+                players[playerID - 1].ChangeDirection((Player.Direction)newDirection);
             }
             else
             {

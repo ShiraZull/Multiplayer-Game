@@ -35,7 +35,7 @@ namespace MultiplayerGameLibrary
             turnManager = new TurnManager(startCountdown);
         }
 
-        public void Update(GameTime gameTime)
+        public void Update()
         {
             MM.ReadServerMessages(this);
         }
@@ -182,7 +182,7 @@ namespace MultiplayerGameLibrary
         public void ReadPlayerConnected(byte playerID, NetConnection netConnection)
         {
             players.Add(new Player(netConnection, playerID));
-            Console.WriteLine($"New player connected with {netConnection} and has now the ID as {players.Count}");
+            Console.WriteLine($"New player connected with the ID as {players.Count}");
         } 
         public void ReadPlayerDisconnected(byte playerID)
         {
@@ -206,7 +206,7 @@ namespace MultiplayerGameLibrary
             else gameActive = true;
 
         } //TODO: Check if this works
-        public void SendDirection(Player.Direction newDirection)
+        public void SendDirection(byte newDirection)
         {
             MM.SendMessageToServer(playerID, MessageManager.PacketType.Direction, newDirection);
         } 
@@ -219,7 +219,7 @@ namespace MultiplayerGameLibrary
             blobs.Add(new Blob(position));
             Console.WriteLine($"Added a blob at {position}");
         } 
-        public void ReadSubBlobAddBody(Point blobPosition, byte playerID)
+        public void ReadSubBlobAddBody(byte playerID, Point blobPosition)
         {
             foreach (Blob blob in blobs)
             {

@@ -50,6 +50,7 @@
     <Compile Include="Body.cs" />
     <Compile Include="Client.cs" />
     <Compile Include="MessageManager.cs" />
+    <Compile Include="OldServerProgram.cs" />
     <Compile Include="Player.cs" />
     <Compile Include="Primitives2D.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

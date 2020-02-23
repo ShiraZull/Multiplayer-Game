@@ -46,9 +46,10 @@ namespace MultiplayerGameLibrary
         {
             NetOutgoingMessage outMsg = server.CreateMessage();
             outMsg.Write((byte)packetType);
+            outMsg.Write(0);
             outMsg.Write(ObjectToByteArray(message));
-            server.SendMessage(outMsg, player.netConnection, NetDeliveryMethod.ReliableOrdered);
-            Console.WriteLine($"Sent message to {player} with {packetType} containing {message}");
+            server.SendMessage(outMsg, player.netConnection, NetDeliveryMethod.ReliableOrdered, 0);
+            Console.WriteLine($"Sent message to {player.netConnection} with {packetType} containing {message}");
         }
 
         public void SendMessageToAllClients(PacketType packetType, byte playerID, Object message)
@@ -62,12 +63,36 @@ namespace MultiplayerGameLibrary
             Console.WriteLine($"Sent message to all clients with {packetType} about player{playerID} containing {message}");
         }
 
+        public void SendMessageToAllClients(PacketType packetType, byte playerID, Point message)
+        {
+            NetOutgoingMessage outMsg = server.CreateMessage();
+            outMsg.Write((byte)packetType);
+            outMsg.Write(playerID);
+            outMsg.Write(ObjectToByteArray(message.X));
+            outMsg.Write(ObjectToByteArray(message.Y));
+
+            server.SendMessage(outMsg, server.Connections, NetDeliveryMethod.ReliableOrdered, 0);
+            Console.WriteLine($"Sent message to all clients with {packetType} about player{playerID} containing {message}");
+        }
+
         public void SendMessageToAllClients(PacketType packetType, Object message)
         {
             NetOutgoingMessage outMsg = server.CreateMessage();
             outMsg.Write((byte)packetType);
             outMsg.Write(0);
             outMsg.Write(ObjectToByteArray(message));
+
+            server.SendMessage(outMsg, server.Connections, NetDeliveryMethod.ReliableOrdered, 0);
+            Console.WriteLine($"Sent message to all clients with {packetType} containing {message}");
+        }
+
+        public void SendMessageToAllClients(PacketType packetType, Point message)
+        {
+            NetOutgoingMessage outMsg = server.CreateMessage();
+            outMsg.Write((byte)packetType);
+            outMsg.Write(0);
+            outMsg.Write(ObjectToByteArray(message.X));
+            outMsg.Write(ObjectToByteArray(message.Y));
 
             server.SendMessage(outMsg, server.Connections, NetDeliveryMethod.ReliableOrdered, 0);
             Console.WriteLine($"Sent message to all clients with {packetType} containing {message}");
@@ -88,7 +113,7 @@ namespace MultiplayerGameLibrary
         public void ReadServerMessages(Client gameClient)
         {
             NetIncomingMessage incMsg;
-            while ((incMsg = server.ReadMessage()) != null)
+            while ((incMsg = client.ReadMessage()) != null)
             {
                 switch (incMsg.MessageType)
                 {
@@ -100,16 +125,22 @@ namespace MultiplayerGameLibrary
                             if (playerID == 0) Console.WriteLine($"Server sent {packetType} containing: {message}");
                             else Console.WriteLine($"Server sent {packetType} regarding player{playerID} containing: {message}");
 
+                            Point coordinateMessage = new Point(-13);
+                            if (packetType == PacketType.GridData || packetType == PacketType.HeadPos || packetType == PacketType.AddBlob || packetType == PacketType.SubBlobAddbody)
+                            {
+                                coordinateMessage = new Point((int)message, (int)ByteArrayToObject(incMsg.ReadBytes(incMsg.LengthBytes - 3)));
+                            }
+
                             switch (packetType)
                             {
                                 case PacketType.GeneralData:
                                     gameClient.ReadGeneralData(message);
                                     break;
                                 case PacketType.GridData:
-                                    gameClient.ReadGridData((Point)message);
+                                    gameClient.ReadGridData(coordinateMessage);
                                     break;
                                 case PacketType.PlayerConnected:
-                                    gameClient.ReadPlayerConnected(playerID, (NetConnection)message);
+                                    gameClient.ReadPlayerConnected(playerID, (NetConnection)message); //TODO fix so there is no NetConnection
                                     break;
                                 case PacketType.PlayerDisconnected:
                                     gameClient.ReadPlayerDisconnected(playerID);
@@ -121,13 +152,13 @@ namespace MultiplayerGameLibrary
                                     
                                     break;
                                 case PacketType.HeadPos:
-                                    gameClient.ReadHeadPos(playerID, (Point)message);
+                                    gameClient.ReadHeadPos(playerID, coordinateMessage);
                                     break;
                                 case PacketType.AddBlob:
-                                    gameClient.ReadAddBlob((Point)message);
+                                    gameClient.ReadAddBlob(coordinateMessage);
                                     break;
                                 case PacketType.SubBlobAddbody:
-                                    gameClient.ReadSubBlobAddBody((Point)message, playerID);
+                                    gameClient.ReadSubBlobAddBody(playerID, coordinateMessage);
                                     break;
                                 case PacketType.PlayerAlive:
                                     gameClient.ReadPlayerAlive(playerID, (bool)message);
@@ -172,7 +203,7 @@ namespace MultiplayerGameLibrary
                         break;
                 }
                 #endregion
-                server.Recycle(incMsg);
+                client.Recycle(incMsg);
             }
         }
 
@@ -193,10 +224,10 @@ namespace MultiplayerGameLibrary
                             switch (packetType)
                             {
                                 case PacketType.GeneralData:
-
+                                    
                                     break;
                                 case PacketType.Direction:
-                                    gameServer.ReadDirection(playerID, (Player.Direction)message);
+                                    gameServer.ReadDirection(playerID, (byte)message);
                                     break;
                                 default:
                                     Console.WriteLine($"Unhandled packageType: {packetType}");

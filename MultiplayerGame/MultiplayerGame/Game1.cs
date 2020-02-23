@@ -70,8 +70,8 @@ namespace MultiplayerGame
                 client.Disconnect("signing out");
                 Exit();
             }
-            
 
+            client.Update();
 
             // Send message
             #region Keys
@@ -81,21 +81,25 @@ namespace MultiplayerGame
                 {
                     direction = Direction.Up;
                     isKeyUp = false;
+                    client.SendDirection((byte)direction);
                 }
                 else if (Keyboard.GetState().IsKeyDown(Keys.A))
                 {
                     direction = Direction.Left;
                     isKeyUp = false;
+                    client.SendDirection((byte)direction);
                 }
                 else if (Keyboard.GetState().IsKeyDown(Keys.S))
                 {
                     direction = Direction.Down;
                     isKeyUp = false;
+                    client.SendDirection((byte)direction);
                 }
                 else if (Keyboard.GetState().IsKeyDown(Keys.D))
                 {
                     direction = Direction.Right;
                     isKeyUp = false;
+                    client.SendDirection((byte)direction);
                 }
             }
             
