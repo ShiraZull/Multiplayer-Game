@@ -3,6 +3,7 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using Tools_XNA_dotNET_Framework;
+using MultiplayerGameLibrary;
 
 namespace MultiplayerGame
 {
@@ -39,8 +40,8 @@ namespace MultiplayerGame
         protected override void Initialize()
         {
             client = new Client();
+            client.Initialize();
             ConfigCamera();
-            client.StartClient();
             connected = client.IsConnectedToServer();
             base.Initialize();
         }
@@ -69,8 +70,7 @@ namespace MultiplayerGame
                 client.Disconnect("signing out");
                 Exit();
             }
-
-            client.ReadMessage();
+            
 
 
             // Send message
@@ -81,25 +81,21 @@ namespace MultiplayerGame
                 {
                     direction = Direction.Up;
                     isKeyUp = false;
-                    client.SendMessage(Client.DataType.Direction, (byte)direction);
                 }
                 else if (Keyboard.GetState().IsKeyDown(Keys.A))
                 {
                     direction = Direction.Left;
                     isKeyUp = false;
-                    client.SendMessage(Client.DataType.Direction, (byte)direction);
                 }
                 else if (Keyboard.GetState().IsKeyDown(Keys.S))
                 {
                     direction = Direction.Down;
                     isKeyUp = false;
-                    client.SendMessage(Client.DataType.Direction, (byte)direction);
                 }
                 else if (Keyboard.GetState().IsKeyDown(Keys.D))
                 {
                     direction = Direction.Right;
                     isKeyUp = false;
-                    client.SendMessage(Client.DataType.Direction, (byte)direction);
                 }
             }
             

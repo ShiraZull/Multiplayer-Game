@@ -47,15 +47,8 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Blob.cs" />
-    <Compile Include="Board.cs" />
-    <Compile Include="Body.cs" />
-    <Compile Include="Player.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="ServerOld.cs" />
-    <Compile Include="Server.cs" />
-    <Compile Include="TurnManager.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />

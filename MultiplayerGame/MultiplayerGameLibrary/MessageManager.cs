@@ -39,30 +39,7 @@ namespace MultiplayerGameLibrary
         }
         public PacketType packetType;
 
-        public void StartServer()
-        {
-            var config = new NetPeerConfiguration("MultiplayerGame2020") { Port = 14242 };
-            config.MaximumConnections = 4;
-            server = new NetServer(config);
-            server.Start();
 
-            if (server.Status == NetPeerStatus.Running)
-                Console.WriteLine("Server has started... \nPort: " + config.Port);
-            else
-                Console.WriteLine("Server unable to start...");
-        }
-
-        public void StartClient()
-        {
-            var config = new NetPeerConfiguration("MultiplayerGame2020");
-            config.AutoFlushSendQueue = false;
-            client = new NetClient(config);
-            client.Start();
-
-            string ip = "localhost";
-            int port = 14242;
-            client.Connect(ip, port);
-        }
 
 
         public void SendMessageToClient(Player player, PacketType packetType, Object message)
