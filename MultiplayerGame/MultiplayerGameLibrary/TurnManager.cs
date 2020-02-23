@@ -28,6 +28,14 @@ namespace MultiplayerGameLibrary
             currentDateTime = DateTime.Now;
             Console.WriteLine($"TurnSettings: Countdown = {startCountdown} milliseconds\nTurnSettings: Interval = {turnDelay} milliseconds");
         }
+        public TurnManager(float startCountdown)
+        {
+            time = -startCountdown;
+            turn = 0;
+            nextTurn = false;
+            currentDateTime = DateTime.Now;
+            Console.WriteLine($"TurnSettings: Countdown = {startCountdown} milliseconds\nTurnSettings: N/A");
+        }
 
         /// <summary>
         /// Updates the time difference between viritual updates
@@ -66,11 +74,41 @@ namespace MultiplayerGameLibrary
             {
                 turn = 1;
                 nextTurn = true;
-                Console.WriteLine("||||| START ||||||");
+                Console.WriteLine("|||||| START ||||||");
                 Console.WriteLine("----- Turn: 1 -----");
             }
+        }
 
+        /// <summary>
+        /// Changes to next turn, made for client, also gives the time difference between each turn
+        /// </summary>
+        public void NextTurn()
+        {
+            turn++;
+            prevDateTime = currentDateTime;
+            currentDateTime = DateTime.Now;
+            timeSpan = currentDateTime - prevDateTime;
+            if (turn == 1)
+            {
+                Console.WriteLine("|||||| START ||||||");
+                Console.WriteLine($"----- Turn: 1 ----- ({timeSpan})");
+            }
+            else Console.WriteLine($"----- Turn: {turn} ----- ({timeSpan})");
+        }
 
+        /// <summary>
+        /// Used for countdowns for the client to then change to first turn
+        /// </summary>
+        public void UpdateCountdown()
+        {
+            if (time < 0)
+            {
+                time += (float)timeDiff;
+                if (time >= 0)
+                {
+                    NextTurn();
+                }
+            }
         }
 
         /// <summary>

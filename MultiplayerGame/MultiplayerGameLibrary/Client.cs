@@ -15,25 +15,25 @@ namespace MultiplayerGameLibrary
     public class Client
     {
         private NetClient client;
+        private MessageManager MM;
+        
+        public byte playerID;
+        public bool gameActive = false;
+        private Point grid;
+        private List<Player> players;
+        private List<Blob> blobs = new List<Blob>();
+        private TurnManager turnManager;
+        private int startCountdown = 3000;
 
-        // A identification for what kind of data is sent
-        public enum DataType
+
+        public void Initialize()
         {
-            GameInfo, // e.g. PlayerID, How many players, how much time is left to start or if the game is active, reset.
-            Board,
-            AddBlob,
-            SubBlob,
-            Direction,
-
-            HeadPos,
-            TurnAction // e.g. If the tail shall disepear, to add a body, or becomes dead (collision).
+            MM = new MessageManager(client);
+            players = new List<Player>(4);
+            turnManager = new TurnManager(startCountdown);
         }
 
-        // Local
-        public byte playerID;
 
-        // Player
-        public List<Player> players = new List<Player>(4);
 
         // GameBoard
         public int gridSize = 6;
@@ -41,6 +41,7 @@ namespace MultiplayerGameLibrary
         public int lineSize;
         public int playArea;
         public Vector2 gridPosition;
+
 
 
         public void Draw(SpriteBatch spriteBatch)
@@ -101,159 +102,12 @@ namespace MultiplayerGameLibrary
             gridPosition = new Vector2((600 - playArea + lineSize) / (2), 200 + (600 - playArea - lineSize) / 2);
         }
 
+        
+        
+        
 
-        // Convert an Object to a byte array
-        public static byte[] ObjectToByteArray(Object obj)
-        {
-            BinaryFormatter bf = new BinaryFormatter();
-            using (var ms = new MemoryStream())
-            {
-                bf.Serialize(ms, obj);
-                return ms.ToArray();
-            }
-        }
-
-        // Convert a byte array to an Object
-        public static Object ByteArrayToObject(byte[] arrBytes)
-        {
-            using (var memStream = new MemoryStream())
-            {
-                var binForm = new BinaryFormatter();
-                memStream.Write(arrBytes, 0, arrBytes.Length);
-                memStream.Seek(0, SeekOrigin.Begin);
-                var obj = binForm.Deserialize(memStream);
-                return obj;
-            }
-        }
-
-
-
-
-        public void StartClient()
-        {
-            var config = new NetPeerConfiguration("MultiplayerGame2020");
-            config.AutoFlushSendQueue = false;
-            client = new NetClient(config);
-            client.Start();
-
-            string ip = "localhost";
-            int port = 14242;
-            client.Connect(ip, port);
-        }
-
-        public void SendMessage(DataType dataType, Object message)
-        {
-            NetOutgoingMessage outMsg = client.CreateMessage();
-            outMsg.Write(playerID);
-            outMsg.Write((byte)dataType);
-            outMsg.Write(ObjectToByteArray(message));
-            client.SendMessage(outMsg, NetDeliveryMethod.ReliableOrdered);
-            client.FlushSendQueue();
-        }
-
-
-        // Variables for Reading messages in order
-        byte headPosPlayerIndex = 0;
-
-
-
-        public void ReadMessage()
-        {
-            NetIncomingMessage incMsg;
-
-            while ((incMsg = client.ReadMessage()) != null)
-            {
-                switch (incMsg.MessageType)
-                {
-                    case NetIncomingMessageType.Data:
-                        {
-                            var dataType = incMsg.ReadByte();
-                            var message = ByteArrayToObject(incMsg.ReadBytes(incMsg.LengthBytes - 1));
-                            Console.WriteLine($"Server sent a {(DataType)dataType} containing {message}");
-
-                            switch (dataType)
-                            {
-                                case (byte)DataType.GameInfo:
-
-                                    // If message contains ID:i, extract the number i and put it as playerID
-                                    if (message.ToString().StartsWith("ID:"))
-                                    {
-
-                                        byte i = 1;
-                                        while (i <= 4)
-                                        {
-                                            if (message.ToString().EndsWith(i.ToString()))
-                                            {
-                                                playerID = i;
-                                                Console.WriteLine("Made playerID as {0}", playerID);
-                                                for (int a = 0; a < i; a++)
-                                                {
-                                                    players.Add(new Player((byte)(a + 1)));
-                                                }
-                                                Console.WriteLine($">>> There is currently {players.Count} players in 'players'");
-                                                break;
-                                            }
-                                            i++;
-                                        }
-                                    }
-
-                                    break;
-
-                                case (byte)DataType.Board:
-
-
-                                    break;
-                                case (byte)DataType.AddBlob:
-
-                                    break;
-                                case (byte)DataType.SubBlob:
-
-                                    break;
-                                case (byte)DataType.HeadPos:
-
-                                    if (message.ToString().StartsWith("X:"))
-                                    {
-                                        players[headPosPlayerIndex].headPos.X = int.Parse(message.ToString().Remove(0, 2));
-                                    }
-                                    else if (message.ToString().StartsWith("Y:"))
-                                    {
-                                        players[headPosPlayerIndex].headPos.Y = int.Parse(message.ToString().Remove(0, 2));
-                                        headPosPlayerIndex++;
-                                    }
-                                    else Console.WriteLine($"Unhandled message: {message.ToString()}");
-
-                                    if (headPosPlayerIndex == players.Count)
-                                    {
-                                        headPosPlayerIndex = 0;
-                                    }
-
-                                    break;
-                                case (byte)DataType.TurnAction:
-
-                                    break;
-                                default:
-                                    Console.WriteLine($"Unhandled DataType: {(DataType)dataType}");
-                                    break;
-                            }
-
-
-
-
-                            break;
-                        }
-                    case NetIncomingMessageType.DebugMessage:
-                        Console.WriteLine(incMsg.ReadString());
-                        break;
-                    case NetIncomingMessageType.StatusChanged:
-                        Console.WriteLine(incMsg.SenderConnection.Status);
-                        break;
-                    default:
-                        Console.WriteLine("Unhandled message type: {0}", incMsg.MessageType);
-                        break;
-                }
-                client.Recycle(incMsg);
-            }
-        }
+        
+        
 
         public bool IsConnectedToServer()
         {
@@ -271,5 +125,117 @@ namespace MultiplayerGameLibrary
         {
             client.Disconnect(playerID + " is disconnecting");
         }
+
+
+
+
+
+        #region GameLogic + Network Methods
+        public void SendGeneralData(object data)
+        {
+            MM.SendMessageToServer(playerID, MessageManager.PacketType.GeneralData, data);
+        }
+        public void ReadGeneralData() // TODO: Work?
+        {
+            
+        }
+        public void ReadGridData(Point newGridSize)
+        {
+            grid = newGridSize;
+            Console.WriteLine($"Changed gridsize to {grid}");
+        }
+        public void ReadPlayerConnected(byte playerID, NetConnection netConnection)
+        {
+            players.Add(new Player(netConnection, playerID));
+            Console.WriteLine($"New player connected with {netConnection} and has now the ID as {players.Count}");
+        } 
+        public void ReadPlayerDisconnected(byte playerID)
+        {
+            foreach (Player player in players)
+            {
+                if (player.playerID == playerID)
+                {
+                    Console.WriteLine($"Player{player.playerID} ({player.netConnection}) has disconnected!");
+                    players.Remove(player);
+                    Console.WriteLine($"Removed Player{player.playerID} from the player list");
+                    MM.SendMessageToAllClients(MessageManager.PacketType.PlayerDisconnected, player.playerID);
+                    return;
+                }
+            }
+            Console.WriteLine($"Unknown has disconnected!");
+
+        } 
+        public void ReadStartGame(bool ready)
+        {
+            if (ready) 
+            else 
+
+        } //TODO: Check if this works
+        public void SendDirection(Player.Direction newDirection)
+        {
+            MM.SendMessageToServer(playerID, MessageManager.PacketType.Direction, newDirection);
+        } 
+        public void SendPlayerData(bool automaticallyUpdate)
+        {
+            foreach (Player player in players)
+            {
+                if (automaticallyUpdate)
+                {
+                    if (player.alive)
+                    {
+                        player.MoveHead();
+                        if (player.CollisionPlayer(players))
+                        {
+                            player.headPos = player.prevHeadPos;
+                            player.alive = false;
+                            Console.WriteLine($"Player{player.playerID} died");
+                            SendPlayerAlive(player.playerID, false);
+                        }
+                        else
+                        {
+                            player.MoveBody(this, blobs);
+
+                            foreach (var body in player.bodies) // Debug
+                            {
+                                Console.WriteLine($"Body: {body.ToString()} position: {body.position}");
+                            }
+                        }
+                    }
+                }
+                MM.SendMessageToAllClients(MessageManager.PacketType.HeadPos, player.playerID, player.headPos);
+            }
+        } //TODO: Check if this works
+        public void AddBlob(Point position)
+        {
+            blobs.Add(new Blob(position));
+            Console.WriteLine($"Manually added a blob at {position}");
+            MM.SendMessageToAllClients(MessageManager.PacketType.AddBlob, position);
+        } //TODO: Check if this works
+        public void AddBlob()
+        {
+            blobs.Add(new Blob(blobs, players, grid));
+            Console.WriteLine($"Spawned a blob at {blobs[blobs.Count - 1].position}");
+            MM.SendMessageToAllClients(MessageManager.PacketType.AddBlob, blobs[blobs.Count - 1].position);
+        } //TODO: Check if this works
+        public void SendSubBlobAddBody(Point blobPosition, byte playerID) // Used in Player.cs
+        {
+            MM.SendMessageToAllClients(MessageManager.PacketType.SubBlobAddbody, playerID, blobPosition);
+        } //TODO: Check if this works
+        public void SendPlayerAlive(byte playerID, bool alive) // Used in Player.cs
+        {
+            MM.SendMessageToAllClients(MessageManager.PacketType.PlayerAlive, playerID, alive);
+        } //TODO: Check if this works
+        public void EndGame()
+        {
+            gameActive = false;
+            Console.WriteLine($"Ended game, changed gameActive to false");
+            MM.SendMessageToAllClients(MessageManager.PacketType.EndGame, "EndGame");
+            PlayerDisconnected(); // All players who disconnected during a match
+        } //TODO: Check if this works
+        #endregion GameLogic + Network Methods
+
+
+
+
     }
 }

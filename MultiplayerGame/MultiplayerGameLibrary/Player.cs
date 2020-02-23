@@ -28,7 +28,7 @@ namespace MultiplayerGameLibrary
         public Direction direction;
         public Direction prevDirection; //Server
 
-        public Point board;
+        public Point grid;
         public Blob collidedBlob;
 
         /// <summary>
@@ -86,20 +86,20 @@ namespace MultiplayerGameLibrary
         {
             if (headPos.X <= 0)
             {
-                headPos.X = board.X;
+                headPos.X = grid.X;
                 return true;
             }
-            else if (headPos.X > board.X)
+            else if (headPos.X > grid.X)
             {
                 headPos.X = 1;
                 return true;
             }
             else if (headPos.Y <= 0)
             {
-                headPos.Y = board.Y;
+                headPos.Y = grid.Y;
                 return true;
             }
-            else if (headPos.Y > board.Y)
+            else if (headPos.Y > grid.Y)
             {
                 headPos.Y = 1;
                 return true;
@@ -170,15 +170,15 @@ namespace MultiplayerGameLibrary
         /// <summary>
         /// Reset the player and its position according to the ID and board size
         /// </summary>
-        /// <param name="boardSize"></param>
-        public void Reset(Point boardSize)
+        /// <param name="gridSize"></param>
+        public void Reset(Point gridSize)
         {
-            board = boardSize;
+            grid = gridSize;
             bodies.Clear();
             alive = true;
             score = 0;
             ready = false;
-            Console.WriteLine($"Player{playerID} has been reset");
+            Console.WriteLine($"RESET_Player{playerID}'s settings: Grid = {grid}");
 
             switch (playerID)
             {
@@ -187,15 +187,15 @@ namespace MultiplayerGameLibrary
                     direction = (Direction)3;
                     break;
                 case 2:
-                    headPos = new Point(board.X - 1, 2);
+                    headPos = new Point(grid.X - 1, 2);
                     direction = (Direction)1;
                     break;
                 case 3:
-                    headPos = new Point(2, board.Y - 1);
+                    headPos = new Point(2, grid.Y - 1);
                     direction = (Direction)3;
                     break;
                 case 4:
-                    headPos = new Point(board.X - 1, board.Y - 1);
+                    headPos = new Point(grid.X - 1, grid.Y - 1);
                     direction = (Direction)1;
                     break;
             }

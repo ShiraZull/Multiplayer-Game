@@ -20,6 +20,8 @@ namespace MultiplayerGameLibrary
         private Point grid = new Point(6);
         private List<Player> players;
         private List<Blob> blobs = new List<Blob>();
+        private int startCountdown = 3000;
+        private int turnDelay = 1000;
 
 
 
@@ -27,7 +29,7 @@ namespace MultiplayerGameLibrary
         {
             MM = new MessageManager(server);
             players = new List<Player>(4);
-            turnManager = new TurnManager(1000, 2000);
+            turnManager = new TurnManager(turnDelay, startCountdown);
         }
 
 
@@ -63,6 +65,7 @@ namespace MultiplayerGameLibrary
         {
             gameActive = false;
             EndGame();
+            turnManager.Reset(startCountdown);
             foreach (Player player in players)
             {
                 player.Reset(grid);
@@ -81,12 +84,6 @@ namespace MultiplayerGameLibrary
                 AddBlob(new Point(grid.X / 2, grid.Y / 2 + 1));
                 AddBlob(new Point(grid.X / 2 + 1, grid.Y / 2 + 1));
             }
-
-        }
-        
-
-        public void SendEndTurnData()
-        {
 
         }
 
@@ -111,6 +108,10 @@ namespace MultiplayerGameLibrary
         {
             MM.SendMessageToAllClients(MessageManager.PacketType.GeneralData, data);
         }
+        public void ReadGeneralData() // TODO: Is this needed?
+        {
+            
+        } 
         public void ChangeGridData(Point newGridSize)
         {
             grid = newGridSize;
@@ -120,8 +121,7 @@ namespace MultiplayerGameLibrary
         public void PlayerConnected(NetConnection netConnection)
         {
             players.Add(new Player(netConnection, (byte)(players.Count + 1)));
-            Console.WriteLine($"Player connected with {netConnection} and has now the ID as {players.Count}");
-            MM.SendMessageToClient(players[players.Count-1], MessageManager.PacketType.GeneralData, "ID:" + players.Count);
+            Console.WriteLine($"New player connected with {netConnection} and has now the ID as {players.Count}");
             SendGeneralData(players[players.Count - 1], "ID:" + players.Count);
             MM.SendMessageToAllClients(MessageManager.PacketType.PlayerConnected, (byte)players.Count, netConnection);
         }
@@ -187,7 +187,7 @@ namespace MultiplayerGameLibrary
             else MM.SendMessageToAllClients(MessageManager.PacketType.StartGame, "Start");
             
         }
-        public void ReciveDirection(byte playerID, Player.Direction newDirection)
+        public void ReadDirection(byte playerID, Player.Direction newDirection)
         {
             if(gameActive)
             {
@@ -248,15 +248,13 @@ namespace MultiplayerGameLibrary
         {
             MM.SendMessageToAllClients(MessageManager.PacketType.PlayerAlive, playerID, alive);
         }
-        public void EndGame() // TODO: Make all disconnected players removed after a game
+        public void EndGame()
         {
             gameActive = false;
             Console.WriteLine($"Ended game, changed gameActive to false");
             MM.SendMessageToAllClients(MessageManager.PacketType.EndGame, "EndGame");
             PlayerDisconnected(); // All players who disconnected during a match
         }
-
-
         #endregion GameLogic + Network Methods
 
     }

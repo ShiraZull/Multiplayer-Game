@@ -39,6 +39,31 @@ namespace MultiplayerGameLibrary
         }
         public PacketType packetType;
 
+        public void StartServer()
+        {
+            var config = new NetPeerConfiguration("MultiplayerGame2020") { Port = 14242 };
+            config.MaximumConnections = 4;
+            server = new NetServer(config);
+            server.Start();
+
+            if (server.Status == NetPeerStatus.Running)
+                Console.WriteLine("Server has started... \nPort: " + config.Port);
+            else
+                Console.WriteLine("Server unable to start...");
+        }
+
+        public void StartClient()
+        {
+            var config = new NetPeerConfiguration("MultiplayerGame2020");
+            config.AutoFlushSendQueue = false;
+            client = new NetClient(config);
+            client.Start();
+
+            string ip = "localhost";
+            int port = 14242;
+            client.Connect(ip, port);
+        }
+
 
         public void SendMessageToClient(Player player, PacketType packetType, Object message)
         {
@@ -101,9 +126,55 @@ namespace MultiplayerGameLibrary
                             switch (packetType)
                             {
                                 case PacketType.GeneralData:
+                                    // If message contains ID:i, extract the number i and put it as playerID
+                                    if (message.ToString().StartsWith("ID:"))
+                                    {
+                                        byte i = 1;
+                                        while (i <= 4)
+                                        {
+                                            if (message.ToString().EndsWith(i.ToString()))
+                                            {
+                                                playerID = i;
+                                                Console.WriteLine($"Made playerID as {playerID}");
+                                                for (int a = 0; a < i; a++)
+                                                {
+                                                    gameClient.players.Add(new Player((byte)(a + 1)));
+                                                }
+                                                Console.WriteLine($">>> There is currently {gameClient.players.Count} players in 'players'");
+                                                break;
+                                            }
+                                            i++;
+                                        }
+                                    }
+                                    break;
+                                case PacketType.GridData:
+
+                                    break;
+                                case PacketType.PlayerConnected:
+
+                                    break;
+                                case PacketType.PlayerDisconnected:
+
+                                    break;
+                                case PacketType.StartGame:
 
                                     break;
                                 case PacketType.Direction:
+
+                                    break;
+                                case PacketType.HeadPos:
+
+                                    break;
+                                case PacketType.AddBlob:
+
+                                    break;
+                                case PacketType.SubBlobAddbody:
+
+                                    break;
+                                case PacketType.PlayerAlive:
+
+                                    break;
+                                case PacketType.EndGame:
 
                                     break;
                                 default:
@@ -124,33 +195,14 @@ namespace MultiplayerGameLibrary
                                 break;
 
                             case NetConnectionStatus.Connected:
-                                players.Add(new Player(incMsg.SenderConnection, (byte)(players.Count + 1)));
-                                Console.WriteLine("Player{0} has connected succesfully with {1}", players.Count, players[0].netConnection);
-                                SendMessageToClient(players[players.Count - 1], PacketType.GameInfo, "ID:" + players.Count);
+
                                 break;
 
-                            case NetConnectionStatus.Disconnecting: // TODO: Fix so that the game wont break when someone disconnects!
-                                {
-                                    foreach (Player player in players)
-                                    {
-                                        if (player.netConnection == incMsg.SenderConnection)
-                                        {
-                                            Console.WriteLine($"Player{player.playerID} ({incMsg.SenderConnection}) is disconnecting...");
-                                        }
-                                    }
-                                }
+                            case NetConnectionStatus.Disconnecting: 
+                                
                                 break;
 
                             case NetConnectionStatus.Disconnected:
-                                foreach (Player player in players)
-                                {
-                                    if (player.netConnection == incMsg.SenderConnection)
-                                    {
-                                        Console.WriteLine($"Player{player.playerID} ({incMsg.SenderConnection}) has disconnected!");
-                                        break;
-                                    }
-                                }
-                                Console.WriteLine($"Unknown ({incMsg.SenderConnection}) disconnected!");
                                 break;
                             default:
                                 Console.WriteLine($"Unhandled message type: {incMsg.SenderConnection.Status}");
@@ -186,12 +238,7 @@ namespace MultiplayerGameLibrary
 
                                     break;
                                 case PacketType.Direction:
-                                    if ((byte)message == ((byte)players[playerID - 1].prevDirection + 2) % 4 || (byte)message == (byte)players[playerID - 1].prevDirection)
-                                    {
-                                        Console.WriteLine($"Player{playerID} direction change request ignored");
-                                        break;
-                                    }
-                                    players[playerID - 1].direction = (Player.Direction)message;
+                                    gameServer.ReadDirection(playerID, (Player.Direction)message);
                                     break;
                                 default:
                                     Console.WriteLine($"Unhandled packageType: {packetType}");
