@@ -117,11 +117,11 @@ namespace MultiplayerGameLibrary
         }
 
         #region GameLogic + Network Methods
-        public void SendGeneralData(Player player, object data)
+        public void SendGeneralData(Player player, string data)
         {
             MM.SendMessageToClient(player, MessageManager.PacketType.GeneralData, data);
         }
-        public void SendGeneralData(object data)
+        public void SendGeneralData(string data)
         {
             MM.SendMessageToAllClients(MessageManager.PacketType.GeneralData, data);
         }

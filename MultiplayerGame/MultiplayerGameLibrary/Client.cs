@@ -147,11 +147,11 @@ namespace MultiplayerGameLibrary
 
 
         #region GameLogic + Network Methods
-        public void SendGeneralData(object data)
+        public void SendGeneralData(string data)
         {
             MM.SendMessageToServer(playerID, MessageManager.PacketType.GeneralData, data);
         }
-        public void ReadGeneralData(object message)
+        public void ReadGeneralData(string message)
         {
             // If message contains ID:i, extract the number i and put it as playerID
             if (message.ToString().StartsWith("ID:"))
@@ -179,10 +179,10 @@ namespace MultiplayerGameLibrary
             grid = newGridSize;
             Console.WriteLine($"Changed gridsize to {grid}");
         }
-        public void ReadPlayerConnected(byte playerID, NetConnection netConnection)
+        public void ReadPlayerConnected(byte playerID)
         {
-            players.Add(new Player(netConnection, playerID));
-            Console.WriteLine($"New player connected with the ID as {players.Count}");
+            players.Add(new Player(playerID));
+            Console.WriteLine($"New player connected with the ID as {playerID}");
         } 
         public void ReadPlayerDisconnected(byte playerID)
         {
