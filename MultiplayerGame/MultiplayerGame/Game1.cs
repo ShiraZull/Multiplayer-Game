@@ -14,7 +14,7 @@ namespace MultiplayerGame
         private Client client;
 
         public bool isKeyUp = true;
-        public enum Direction
+        public enum Direction : byte
         {
             Up, 
             Left,

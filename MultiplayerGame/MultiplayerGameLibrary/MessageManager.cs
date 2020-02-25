@@ -179,7 +179,7 @@ namespace MultiplayerGameLibrary
                                 else Console.WriteLine($"Server sent {packetType} regarding player{playerID} containing: {boolMessage}");
                             }
 
-                            byte byteMessage = 3;
+                            byte byteMessage = 69;
                             if (packetType == PacketType.PlayerConnected || packetType == PacketType.PlayerDisconnected)
                             {
                                 byteMessage = incMsg.ReadByte();

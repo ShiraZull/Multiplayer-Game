@@ -34,7 +34,6 @@ namespace MultiplayerGameServer
             // TODO: Add your initialization logic here
             server.Initialize();
             server.GameSetup();
-            server.gameActive = true; //DEBUG
             base.Initialize();
         }
 

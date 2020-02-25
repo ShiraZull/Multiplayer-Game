@@ -47,9 +47,20 @@ namespace MultiplayerGameLibrary
 
         public void ChangeDirection(Direction newDirection)
         {
-            if ((byte)newDirection == (byte)(prevDirection + 2 % 4) || (byte)newDirection == (byte)prevDirection) return;
-            else direction = newDirection;
-            Console.WriteLine($"Player{playerID} changed direction to {direction}");
+            if ((byte)newDirection == ((byte)(prevDirection+2)%4) || (byte)newDirection == (byte)prevDirection)
+            {
+                Console.WriteLine($"Player{playerID} sent a controdictional direction from {prevDirection} to {newDirection} : Request ignored");
+                if (prevDirection == direction)
+                {
+                    
+                }
+                return;
+            }
+            else
+            {
+                direction = newDirection;
+            }
+            Console.WriteLine($"Changed Player{playerID} direction's to {direction}");
         }
 
         public void MoveHead() // Server
@@ -207,19 +218,15 @@ namespace MultiplayerGameLibrary
             {
                 case 1:
                     headPos = new Point(2, 2);
-                    direction = (Direction)3;
                     break;
                 case 2:
                     headPos = new Point(grid.X - 1, 2);
-                    direction = (Direction)1;
                     break;
                 case 3:
                     headPos = new Point(2, grid.Y - 1);
-                    direction = (Direction)3;
                     break;
                 case 4:
                     headPos = new Point(grid.X - 1, grid.Y - 1);
-                    direction = (Direction)1;
                     break;
             }
             prevHeadPos = headPos;

@@ -47,6 +47,15 @@ namespace MultiplayerGameLibrary
                 Console.WriteLine("Server unable to start...");
         }
 
+        public void LobbySetup()
+        {
+
+        }
+
+        public void LobbyRun()
+        {
+
+        }
 
         public void GameSetup()
         {
@@ -62,7 +71,11 @@ namespace MultiplayerGameLibrary
             MM.ReadClientMessages(this);
             if (!gameActive)
             {
-                gameActive = AllPlayersReady();
+                if (AllPlayersReady())
+                {
+                    RestartGame();
+                    gameActive = true;
+                }
             }
 
             turnManager.UpdateTimeDiff();
@@ -81,7 +94,6 @@ namespace MultiplayerGameLibrary
         public void RestartGame()
         {
             gameActive = false;
-            EndGame();
             turnManager.Reset(startCountdown);
             foreach (Player player in players)
             {
@@ -108,7 +120,7 @@ namespace MultiplayerGameLibrary
         {
             int allPlayersReady = 0;
             foreach (Player player in players) if (player.ready) allPlayersReady++;
-            if (players.Count == allPlayersReady)
+            if (players.Count == allPlayersReady && players.Count > 0)
             {
                 SendStartGame(true);
                 return true;
@@ -141,6 +153,10 @@ namespace MultiplayerGameLibrary
             Console.WriteLine($"New player connected with {netConnection} and has now the ID as {players.Count}");
             SendGeneralData(players[players.Count - 1], (string)("ID:" + players.Count.ToString()));
             MM.SendMessageToAllClients(MessageManager.PacketType.PlayerConnected, (byte)players.Count);
+            if (!gameActive)
+            {
+                
+            }
         }
         public void PlayerDisconnected(NetConnection senderConnection)
         {
@@ -212,7 +228,14 @@ namespace MultiplayerGameLibrary
             }
             else
             {
-                players[playerID - 1].ready = true;
+                if (players[playerID - 1].ready == false)
+                {
+                    players[playerID - 1].ready = true;
+                    players[playerID - 1].direction = (Player.Direction)newDirection;
+                    players[playerID - 1].prevDirection = (Player.Direction)newDirection;
+                    Console.WriteLine($"Player{playerID} READY");
+                }
+                
             }
         }
         public void SendPlayerData(bool automaticallyUpdate)

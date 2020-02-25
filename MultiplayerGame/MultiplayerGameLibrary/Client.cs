@@ -53,9 +53,18 @@ namespace MultiplayerGameLibrary
         {
             RestartGrid();
 
+            foreach (Blob blob in blobs)
+            {
+                DrawBlob(spriteBatch, blob.position);
+            }
+
             foreach (Player player in players)
             {
                 DrawPlayerPart(spriteBatch, player.headPos, player.playerID, 1f);
+                if (player.headPos == new Point(2,2))
+                {
+                    
+                }
                 foreach (Body body in player.bodies)
                 {
                     DrawPlayerPart(spriteBatch, body.position, player.playerID, 0.7f);
@@ -67,6 +76,12 @@ namespace MultiplayerGameLibrary
         public void DrawPlayerPart(SpriteBatch spriteBatch, Point position, byte playerID, float alpha)
         {
             Primitives2D.DrawFilledRectangle(spriteBatch, new Rectangle((int)gridPosition.X + squareSize * (position.X - 1), (int)gridPosition.Y + squareSize * (position.Y - 1), squareSize, squareSize), playerColor(playerID, alpha));
+        }
+
+        public void DrawBlob(SpriteBatch spriteBatch, Point position)
+        {
+            Primitives2D.DrawCircle(spriteBatch, new Vector2((int)gridPosition.X + squareSize * (position.X - 1) + squareSize/2 - lineSize/2, 
+                (int)gridPosition.Y + squareSize * (position.Y - 1) + squareSize / 2 + lineSize/2), squareSize / 3, 24, Color.Wheat, squareSize / 3);
         }
 
         public Color playerColor(byte playerID, float alpha)
@@ -181,6 +196,10 @@ namespace MultiplayerGameLibrary
         }
         public void ReadPlayerConnected(byte playerID)
         {
+            if (playerID == this.playerID)
+            {
+                return;
+            }
             players.Add(new Player(playerID));
             Console.WriteLine($"New player connected with the ID as {playerID}");
         } 
