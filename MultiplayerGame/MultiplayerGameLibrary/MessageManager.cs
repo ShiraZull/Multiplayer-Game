@@ -198,7 +198,7 @@ namespace MultiplayerGameLibrary
                             Point pointMessage = Point.Zero;
                             if (packetType == PacketType.GridData || packetType == PacketType.HeadPos || packetType == PacketType.AddBlob || packetType == PacketType.SubBlobAddbody)
                             {
-                                if (packetType == PacketType.HeadPos && gameClient.gameActive)
+                                if (packetType == PacketType.HeadPos && gameClient.gameActive && playerID == gameClient.players.Count)
                                 {
                                     gameClient.turnManager.NextTurn();
                                 }

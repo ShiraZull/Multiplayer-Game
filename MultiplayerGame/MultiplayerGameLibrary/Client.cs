@@ -20,7 +20,7 @@ namespace MultiplayerGameLibrary
         public byte playerID;
         public bool gameActive = false;
         private Point grid;
-        private List<Player> players;
+        public List<Player> players;
         private List<Blob> blobs = new List<Blob>();
         public TurnManager turnManager;
         private int startCountdown = 3000;
@@ -53,12 +53,10 @@ namespace MultiplayerGameLibrary
                 if (turnManager.nextTurn)
                 {
                     turnManager.nextTurn = false;
-                    Console.WriteLine($"::::Turn {turnManager.turn}");
                     foreach (Player player in players)
                     {
                         if (player.alive)
                         {
-                            Console.WriteLine("Player is ALIVE!");
                             player.MoveBody();
 
                             foreach (var body in player.bodies) // Debug

@@ -269,7 +269,6 @@ namespace MultiplayerGameLibrary
                 {
                     if (player.CollisionPlayer(players))
                     {
-                        player.headPos = player.prevHeadPos;
                         player.alive = false;
                         Console.WriteLine($"Player{player.playerID} died");
                         SendPlayerAlive(player.playerID, false);
