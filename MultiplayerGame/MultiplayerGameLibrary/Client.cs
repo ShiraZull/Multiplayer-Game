@@ -22,7 +22,7 @@ namespace MultiplayerGameLibrary
         private Point grid;
         private List<Player> players;
         private List<Blob> blobs = new List<Blob>();
-        private TurnManager turnManager;
+        public TurnManager turnManager;
         private int startCountdown = 3000;
         private bool allPlayersReady = false;
 
@@ -37,8 +37,45 @@ namespace MultiplayerGameLibrary
 
         public void Update()
         {
-            MM.ReadServerMessages(this);
+            GameRun();
         }
+
+
+        public void GameRun()
+        {
+            MM.ReadServerMessages(this);
+
+            turnManager.UpdateTimeDiff(0);
+            if (allPlayersReady) turnManager.UpdateCountdown();
+            
+            if (gameActive)
+            {
+                if (turnManager.nextTurn)
+                {
+                    turnManager.nextTurn = false;
+                    Console.WriteLine($"::::Turn {turnManager.turn}");
+                    foreach (Player player in players)
+                    {
+                        if (player.alive)
+                        {
+                            Console.WriteLine("Player is ALIVE!");
+                            player.MoveBody();
+
+                            foreach (var body in player.bodies) // Debug
+                            {
+                                Console.WriteLine($"Body: {body.life} position: {body.position}");
+                            }
+                        }
+                    }
+                    
+
+                }
+            }
+        }
+
+
+
+
 
         // GameBoard
         public int gridSize = 6;
@@ -61,13 +98,9 @@ namespace MultiplayerGameLibrary
             foreach (Player player in players)
             {
                 DrawPlayerPart(spriteBatch, player.headPos, player.playerID, 1f);
-                if (player.headPos == new Point(2,2))
-                {
-                    
-                }
                 foreach (Body body in player.bodies)
                 {
-                    DrawPlayerPart(spriteBatch, body.position, player.playerID, 0.7f);
+                    DrawPlayerPart(spriteBatch, body.position, player.playerID, 0.5f);
                 }
             }
             Primitives2D.DrawGrid(spriteBatch, gridSize, gridSize, squareSize, gridPosition, Color.White, lineSize);
@@ -221,8 +254,21 @@ namespace MultiplayerGameLibrary
         } 
         public void ReadStartGame(bool ready)
         {
-            if (ready) allPlayersReady = true;
-            else gameActive = true;
+            if (ready)
+            {
+                foreach (Player player in players)
+                {
+                    player.Reset();
+                }
+                allPlayersReady = true;
+                turnManager.turn = 0;
+                turnManager.time = 3000;
+                Console.WriteLine("All players are reset and ready! Staring countdown...");
+            }
+            else
+            {
+                gameActive = true;
+            }
 
         } //TODO: Check if this works
         public void SendDirection(byte newDirection)
@@ -240,14 +286,16 @@ namespace MultiplayerGameLibrary
         } 
         public void ReadSubBlobAddBody(byte playerID, Point blobPosition)
         {
+            
             foreach (Blob blob in blobs)
             {
                 if (blob.position == blobPosition)
                 {
                     blobs.Remove(blob);
+                    break;
                 }
             }
-            players[playerID - 1].eatenBlob = true;
+            players[playerID - 1].eatenBlob++;
             
         }
         public void ReadPlayerAlive(byte playerID, bool alive)

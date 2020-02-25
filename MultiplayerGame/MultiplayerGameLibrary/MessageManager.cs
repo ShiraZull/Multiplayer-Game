@@ -198,6 +198,10 @@ namespace MultiplayerGameLibrary
                             Point pointMessage = Point.Zero;
                             if (packetType == PacketType.GridData || packetType == PacketType.HeadPos || packetType == PacketType.AddBlob || packetType == PacketType.SubBlobAddbody)
                             {
+                                if (packetType == PacketType.HeadPos && gameClient.gameActive)
+                                {
+                                    gameClient.turnManager.NextTurn();
+                                }
                                 pointMessage = new Point(incMsg.ReadInt32(), incMsg.ReadInt32());
                                 if (playerID == 0) Console.WriteLine($"Server sent {packetType} containing: {pointMessage}");
                                 else Console.WriteLine($"Server sent {packetType} regarding player{playerID} containing: {pointMessage}");

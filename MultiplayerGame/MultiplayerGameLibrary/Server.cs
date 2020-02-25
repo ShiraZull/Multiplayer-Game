@@ -78,12 +78,13 @@ namespace MultiplayerGameLibrary
                 }
             }
 
-            turnManager.UpdateTimeDiff();
+            turnManager.UpdateTimeDiff(20);
             if (gameActive)
             {
                 turnManager.UpdateTurn();
                 if (turnManager.nextTurn)
                 {
+                    if (turnManager.turn == 1) SendStartGame(false);
                     SendPlayerData(true);
                     if (blobs.Count == 0) AddBlob();
                     
@@ -216,9 +217,9 @@ namespace MultiplayerGameLibrary
         }
         public void SendStartGame(bool ready)
         {
-            if (ready) MM.SendMessageToAllClients(MessageManager.PacketType.StartGame, "Ready");
-            else MM.SendMessageToAllClients(MessageManager.PacketType.StartGame, "Start");
-            
+            if (ready) MM.SendMessageToAllClients(MessageManager.PacketType.StartGame, "Ready"); // Declare turn 0 for client
+            else MM.SendMessageToAllClients(MessageManager.PacketType.StartGame, "Start"); // Declare turn 1 for client
+
         }
         public void ReadDirection(byte playerID, byte newDirection)
         {
@@ -240,34 +241,47 @@ namespace MultiplayerGameLibrary
         }
         public void SendPlayerData(bool automaticallyUpdate)
         {
+            if (!automaticallyUpdate)
+            {
+                foreach (Player player in players)
+                {
+                    MM.SendMessageToAllClients(MessageManager.PacketType.HeadPos, player.playerID, player.headPos);
+                    return;
+                }
+            }
             foreach (Player player in players)
             {
-                if (automaticallyUpdate)
+                if (player.alive)
                 {
-                    if (player.alive)
+                    player.MoveHead();
+                    MM.SendMessageToAllClients(MessageManager.PacketType.HeadPos, player.playerID, player.headPos);
+                    player.MoveBody(this, blobs);
+
+                    foreach (var body in player.bodies) // Debug
                     {
-                        player.MoveHead();
-                        if (player.CollisionPlayer(players))
-                        {
-                            player.headPos = player.prevHeadPos;
-                            player.alive = false;
-                            Console.WriteLine($"Player{player.playerID} died");
-                            SendPlayerAlive(player.playerID, false);
-                        }
-                        else
-                        {
-                            player.MoveBody(this, blobs);
-                           
-                            foreach (var body in player.bodies) // Debug
-                            {
-                                Console.WriteLine($"Body: {body.ToString()} position: {body.position}");
-                            }
-                        }
+                        Console.WriteLine($"Body: {body.ToString()} position: {body.position}");
                     }
                 }
-                MM.SendMessageToAllClients(MessageManager.PacketType.HeadPos, player.playerID, player.headPos);
             }
+            foreach (Player player in players)
+            {
+                if (player.alive)
+                {
+                    if (player.CollisionPlayer(players))
+                    {
+                        player.headPos = player.prevHeadPos;
+                        player.alive = false;
+                        Console.WriteLine($"Player{player.playerID} died");
+                        SendPlayerAlive(player.playerID, false);
+                    }
+                }
+            }
+            
+
         }
+
+
+
         public void AddBlob(Point position)
         {
             blobs.Add(new Blob(position));

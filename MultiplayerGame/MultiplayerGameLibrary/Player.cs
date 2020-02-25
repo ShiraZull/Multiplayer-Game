@@ -29,7 +29,7 @@ namespace MultiplayerGameLibrary
         public Direction prevDirection; //Server
 
         public Point grid;
-        public bool eatenBlob; // Client
+        public int eatenBlob = 0; // Client
 
         /// <summary>
         /// A contruct that add another player/client to the game/server
@@ -148,10 +148,15 @@ namespace MultiplayerGameLibrary
             foreach (var body in bodies)
             {
                 body.SubLife();
-                if (body.life <= 0)
+            }
+            int totalBodies = bodies.Count;
+            for (int i = 0; i < totalBodies; i++)
+            {
+                if (bodies[i].life <= 0)
                 {
-                    bodies.Remove(body);
+                    bodies.Remove(bodies[i]);
                     bodies.Add(new Body(prevHeadPos, score));
+                    --totalBodies;
                 }
             }
         }
@@ -162,9 +167,9 @@ namespace MultiplayerGameLibrary
         /// <param name="If player has eaten blob, it adds a body and a point"></param>
         public void MoveBody()
         {
-            if (eatenBlob)
+            if (eatenBlob > 0)
             {
-                eatenBlob = false;
+                eatenBlob--;
                 bodies.Add(new Body(prevHeadPos, ++score));
                 Console.WriteLine($"Player{playerID} recived a new body at {prevHeadPos} and has current score: {score}");
                 return;
@@ -172,10 +177,15 @@ namespace MultiplayerGameLibrary
             foreach (var body in bodies)
             {
                 body.SubLife();
-                if (body.life <= 0)
+            }
+            int totalBodies = bodies.Count;
+            for (int i = 0; i < totalBodies; i++)
+            {
+                if (bodies[i].life <= 0)
                 {
-                    bodies.Remove(body);
+                    bodies.Remove(bodies[i]);
                     bodies.Add(new Body(prevHeadPos, score));
+                    --totalBodies;
                 }
             }
         }
@@ -231,6 +241,14 @@ namespace MultiplayerGameLibrary
             }
             prevHeadPos = headPos;
             Console.WriteLine($"Player{playerID} spawned at " + headPos.ToString());
+        }
+
+        public void Reset()
+        {
+            bodies.Clear();
+            alive = true;
+            score = 0;
+            prevHeadPos = headPos;
         }
     }
 }

@@ -40,15 +40,16 @@ namespace MultiplayerGameLibrary
         /// <summary>
         /// Updates the time difference between viritual updates
         /// </summary>
-        public void UpdateTimeDiff()
+        /// <param name="warningMilliseconds"></param>
+        public void UpdateTimeDiff(int warningMilliseconds)
         {
             prevDateTime = currentDateTime;
             currentDateTime = DateTime.Now;
             timeSpan = currentDateTime - prevDateTime;
             timeDiff = timeSpan.TotalMilliseconds;
             
-            // A warning if the lag is above 20 milliseconds
-            if (timeDiff >= 20) Console.WriteLine("Warning: GameTime is {0} milliseconds", timeDiff);
+            // A warning if the lag is above warning milliseconds, unless it's 0 and it will ignore the case
+            if (timeDiff >= warningMilliseconds && warningMilliseconds != 0) Console.WriteLine($"Warning: GameTime is {timeDiff} milliseconds");
         }
 
         /// <summary>
@@ -85,15 +86,16 @@ namespace MultiplayerGameLibrary
         public void NextTurn()
         {
             turn++;
+            nextTurn = true;
             prevDateTime = currentDateTime;
             currentDateTime = DateTime.Now;
             timeSpan = currentDateTime - prevDateTime;
             if (turn == 1)
             {
                 Console.WriteLine("|||||| START ||||||");
-                Console.WriteLine($"----- Turn: 1 ----- ({timeSpan})");
+                Console.WriteLine($"----- Turn: 1 ----- ({timeSpan.TotalMilliseconds})");
             }
-            else Console.WriteLine($"----- Turn: {turn} ----- ({timeSpan})");
+            else Console.WriteLine($"----- Turn: {turn} ----- ({timeSpan.TotalMilliseconds})");
         }
 
         /// <summary>
@@ -104,10 +106,6 @@ namespace MultiplayerGameLibrary
             if (time < 0)
             {
                 time += (float)timeDiff;
-                if (time >= 0)
-                {
-                    NextTurn();
-                }
             }
         }
 
