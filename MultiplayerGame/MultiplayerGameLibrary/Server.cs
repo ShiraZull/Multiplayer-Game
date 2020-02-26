@@ -17,7 +17,7 @@ namespace MultiplayerGameLibrary
 
         public bool gameActive = false;
         private TurnManager turnManager;
-        private Point grid = new Point(6);
+        private Point grid = new Point(12);
         private List<Player> players;
         private List<Blob> blobs = new List<Blob>();
         private int startCountdown = 3000;

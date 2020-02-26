@@ -9,6 +9,7 @@ using System.IO;
 using System.Runtime.Serialization.Formatters.Binary;
 using Microsoft.Xna.Framework.Graphics;
 using Tools_XNA_dotNET_Framework;
+using Microsoft.Xna.Framework.Content;
 
 namespace MultiplayerGameLibrary
 {
@@ -19,13 +20,14 @@ namespace MultiplayerGameLibrary
         
         public byte playerID;
         public bool gameActive = false;
-        private Point grid;
+        private Point grid = new Point(1);
         public List<Player> players;
         private List<Blob> blobs = new List<Blob>();
         public TurnManager turnManager;
         private int startCountdown = 3000;
         private bool allPlayersReady = false;
 
+        public SpriteFont scoreFont;
 
         public void Initialize()
         {
@@ -34,6 +36,12 @@ namespace MultiplayerGameLibrary
             players = new List<Player>(4);
             turnManager = new TurnManager(startCountdown);
         }
+
+        public void Load(ContentManager Content)
+        {
+            scoreFont = Content.Load<SpriteFont>(@"ScoreFont");
+        }
+
 
         public void Update()
         {
@@ -76,7 +84,7 @@ namespace MultiplayerGameLibrary
 
 
         // GameBoard
-        public int gridSize = 6;
+        public int gridSize = 12;
         public int squareSize;
         public int lineSize;
         public int playArea;
@@ -102,6 +110,10 @@ namespace MultiplayerGameLibrary
                 }
             }
             Primitives2D.DrawGrid(spriteBatch, gridSize, gridSize, squareSize, gridPosition, Color.White, lineSize);
+            for (int i = 0; i < players.Count; i++)
+            {
+                spriteBatch.DrawString(scoreFont, players[i].score.ToString(), new Vector2(40 + 120*i, 20 + (i%2)*60), playerColor(players[i].playerID, 1f));
+            }
         }
 
         public void DrawPlayerPart(SpriteBatch spriteBatch, Point position, byte playerID, float alpha)
@@ -118,6 +130,14 @@ namespace MultiplayerGameLibrary
         public Color playerColor(byte playerID, float alpha)
         {
             Color color = new Color();
+            foreach (Player player in players)
+            {
+                if (!player.alive && player.playerID == playerID)
+                {
+                    color = new Color(Color.LightGray, alpha);
+                    return color;
+                }
+            }
             if (playerID == 1)
             {
                 color = new Color(Color.Aqua, alpha);
@@ -146,6 +166,7 @@ namespace MultiplayerGameLibrary
 
         public void RestartGrid()
         {
+            gridSize = grid.X;
             squareSize = (600 - (gridSize + 1) * lineSize) / gridSize;
             if (gridSize > 20) lineSize = 1;
             else lineSize = squareSize / (20);
@@ -223,6 +244,7 @@ namespace MultiplayerGameLibrary
         public void ReadGridData(Point newGridSize)
         {
             grid = newGridSize;
+            RestartGrid();
             Console.WriteLine($"Changed gridsize to {grid}");
         }
         public void ReadPlayerConnected(byte playerID)

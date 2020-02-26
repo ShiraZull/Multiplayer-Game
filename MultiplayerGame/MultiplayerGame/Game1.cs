@@ -60,7 +60,7 @@ namespace MultiplayerGame
         {
             spriteBatch = new SpriteBatch(GraphicsDevice);
             _texture = Content.Load<Texture2D>("white_background");
-            
+            client.Load(Content);
         }
         
         protected override void Update(GameTime gameTime)
