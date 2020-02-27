@@ -27,7 +27,7 @@ namespace MultiplayerGameLibrary
         private int startCountdown = 3000;
         private bool allPlayersReady = false;
 
-        public SpriteFont scoreFont;
+        public SpriteFont scoreFont, bigFont, smallFont;
 
         public void Initialize()
         {
@@ -40,6 +40,8 @@ namespace MultiplayerGameLibrary
         public void Load(ContentManager Content)
         {
             scoreFont = Content.Load<SpriteFont>(@"ScoreFont");
+            bigFont = Content.Load<SpriteFont>(@"BigFont");
+            smallFont = Content.Load<SpriteFont>(@"SmallFont");
         }
 
 
@@ -112,8 +114,30 @@ namespace MultiplayerGameLibrary
             Primitives2D.DrawGrid(spriteBatch, gridSize, gridSize, squareSize, gridPosition, Color.White, lineSize);
             for (int i = 0; i < players.Count; i++)
             {
-                spriteBatch.DrawString(scoreFont, players[i].score.ToString(), new Vector2(40 + 120*i, 20 + (i%2)*60), playerColor(players[i].playerID, 1f));
+                spriteBatch.DrawString(scoreFont, players[i].bestScore.ToString(), new Vector2(40 + 130 * i, 0), Color.LightGray);
+                spriteBatch.DrawString(scoreFont, players[i].score.ToString(), new Vector2(40 + 130 * i, 80), playerColor(players[i].playerID, 1f));
+
             }
+            if (playerID > 0)
+            {
+                int pil = playerID - 1;
+                spriteBatch.DrawString(smallFont, "BEST SCORES", new Vector2(40, 4), Color.LightGray);
+                spriteBatch.DrawString(smallFont, "YOU", new Vector2(40 + 130 * pil, 160), playerColor(playerID, 1f));
+            }
+
+            if (!gameActive)
+            {
+                if (playerID == 0) spriteBatch.DrawString(bigFont, "Waiting for server...", new Vector2(60, 300), Color.White);
+                else if(!allPlayersReady)
+                {
+                    Primitives2D.DrawFilledRectangle(spriteBatch, new Rectangle(0,200,600,600), Color.LightGray);
+                    spriteBatch.DrawString(bigFont, "Control with [WASD] \n\nPress one of the \nkeys when ready\nAll players need to \nbe ready to start", new Vector2(60, 320), Color.Black);
+                }
+                
+            }
+
+
+
         }
 
         public void DrawPlayerPart(SpriteBatch spriteBatch, Point position, byte playerID, float alpha)
@@ -306,13 +330,14 @@ namespace MultiplayerGameLibrary
         } 
         public void ReadSubBlobAddBody(byte playerID, Point blobPosition)
         {
-            
-            foreach (Blob blob in blobs)
+            int blobbies = blobs.Count;
+            for (int i = 0; i < blobbies; i++)
             {
-                if (blob.position == blobPosition)
+                if (blobs[i].position == blobPosition)
                 {
-                    blobs.Remove(blob);
-                    break;
+                    blobs.Remove(blobs[i]);
+                    i--;
+                    blobbies--;
                 }
             }
             players[playerID - 1].eatenBlob++;
@@ -320,13 +345,28 @@ namespace MultiplayerGameLibrary
         }
         public void ReadPlayerAlive(byte playerID, bool alive)
         {
+            if (!alive)
+            {
+                players[playerID - 1].MoveBody();
+            }
             players[playerID - 1].alive = alive;
         }
         public void ReadEndGame()
         {
             gameActive = false;
-            Console.WriteLine($"Ended game, changed gameActive to false");
-        } //TODO: Check if this works
+            foreach (Player player in players)
+            {
+                if (player.score > player.bestScore)
+                {
+                    player.bestScore = player.score;
+                }
+                player.Reset();
+            }
+            blobs.Clear();
+            allPlayersReady = false;
+            Console.WriteLine($"Ended game, reset game");
+            turnManager.Reset(startCountdown);
+        } 
         #endregion GameLogic + Network Methods
 
 

@@ -87,7 +87,16 @@ namespace MultiplayerGameLibrary
                     if (turnManager.turn == 1) SendStartGame(false);
                     SendPlayerData(true);
                     if (blobs.Count == 0) AddBlob();
-                    
+                        int alive = 0;
+                    foreach (Player player in players)
+                    {
+                        if (player.alive) ++alive;
+                    }
+                        if (alive == 0)
+                        {
+                            EndGame();
+                            RestartGame();
+                        }
                 }
             }
         }
@@ -246,8 +255,8 @@ namespace MultiplayerGameLibrary
                 foreach (Player player in players)
                 {
                     MM.SendMessageToAllClients(MessageManager.PacketType.HeadPos, player.playerID, player.headPos);
-                    return;
                 }
+                    return;
             }
             foreach (Player player in players)
             {
@@ -257,10 +266,10 @@ namespace MultiplayerGameLibrary
                     MM.SendMessageToAllClients(MessageManager.PacketType.HeadPos, player.playerID, player.headPos);
                     player.MoveBody(this, blobs);
 
-                    foreach (var body in player.bodies) // Debug
-                    {
-                        Console.WriteLine($"Body: {body.ToString()} position: {body.position}");
-                    }
+                    //foreach (var body in player.bodies) // Debug
+                    //{
+                    //    Console.WriteLine($"Body: {body.ToString()} position: {body.position}");
+                    //}
                 }
             }
             foreach (Player player in players)

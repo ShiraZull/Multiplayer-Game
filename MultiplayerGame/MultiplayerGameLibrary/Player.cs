@@ -15,8 +15,9 @@ namespace MultiplayerGameLibrary
 
         public bool alive;
         public int score;
+        public int bestScore;
         public List<Body> bodies = new List<Body>();
-        public Point headPos = new Point(3, 3);
+        public Point headPos = new Point(1);
         public Point prevHeadPos;
         public enum Direction : byte
         {
