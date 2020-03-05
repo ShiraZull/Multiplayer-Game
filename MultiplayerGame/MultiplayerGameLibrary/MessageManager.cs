@@ -12,13 +12,14 @@ namespace MultiplayerGameLibrary
 {
     public class MessageManager
     {
-
+        // Using the built in classes for handling network connectivity and communication from Lidgren in Monogame.
         private NetServer server;
         private NetClient client;
 
         public MessageManager(NetServer server) { this.server = server; }
         public MessageManager(NetClient client) { this.client = client; }
 
+        // A byte that declares what type of message the server or client is sending, to be able and sort out what kind of data it is and what application it has.
         public enum PacketType : byte
         {
             // General
@@ -39,26 +40,54 @@ namespace MultiplayerGameLibrary
         }
         public PacketType packetType;
 
+        // -------------------------------------------------------------------
+        // OBS: See StartClient() in Client.cs and StartServer() in Server.cs for some more information about the initialization steps of lidgren.
+        // -------------------------------------------------------------------
 
-
-
+        /// <summary>
+        /// Server sends a message to a specific client in the player list, containing a packetType and a message
+        /// </summary>
+        /// <param name="player">Which player the message shall be sent to</param>
+        /// <param name="packetType">what type of message it is</param>
+        /// <param name="message">what information shall be sent to client</param>
         public void SendMessageToClient(Player player, PacketType packetType, string message)
         {
+            // Creates a message that can be sent
             NetOutgoingMessage outMsg = server.CreateMessage();
+            // Puts in what type shall be sent, in form of a byte
             outMsg.Write((byte)packetType);
+            // A placeholder to make the old readcode on the client to actually work, this basically declares that this is a general message
             outMsg.Write((byte)0);
+            // Write inte information contained in the message parameter
             outMsg.Write(message);
+            // Server sends the message to the specified player and their connection (ip) using 
+            // a ReliableOrdered delivery method (the message shall be read in order and shall be sent reliable which means 
+            // it should not be lost on their way to the client) and lastly a specified channel which is mandatory for the server 
+            // to send stuff to client, it's purpose is for the coder to be able to control if the newest 
+            // message is important and the old ones can be ignored.
             server.SendMessage(outMsg, player.netConnection, NetDeliveryMethod.ReliableOrdered, 0);
+            // Write what the server just sent in the console
             Console.WriteLine($"Sent message to {player.netConnection} with {packetType} containing {message}");
         }
 
+        /// <summary>
+        /// Similar to SendMessageToClient(player, packetType, message)
+        /// But this one specify which player the message is about and it sends that message to all clients using server.connections 
+        /// instead of all player.connections in players, so this include clients without a player identity.
+        /// This method handles bools, there are multiple methods for different message types.
+        /// </summary>
+        /// <param name="packetType">What type of message it is</param>
+        /// <param name="playerID">A variable that defines who the message is about. E.g. used for player head, 
+        /// if you send a position you also need to specify which one of the players that has that position </param>
+        /// <param name="message">What information shall be sent to client</param>
         public void SendMessageToAllClients(PacketType packetType, byte playerID, bool message)
         {
             NetOutgoingMessage outMsg = server.CreateMessage();
             outMsg.Write((byte)packetType);
+            // Here is the player that the message specifies
             outMsg.Write(playerID);
             outMsg.Write(message);
-
+            // Here is server.connections used instead of the playerlist, which includes all clients connected to server.
             server.SendMessage(outMsg, server.Connections, NetDeliveryMethod.ReliableOrdered, 0);
             Console.WriteLine($"Sent message to all clients with {packetType} about player{playerID} containing {message}");
         }
@@ -94,10 +123,19 @@ namespace MultiplayerGameLibrary
             Console.WriteLine($"Sent message to all clients with {packetType} about player{playerID} containing {message}");
         }
 
+        /// <summary>
+        /// Similar to SendMessageToClient(player, packetType, message)
+        /// But this one sends the message to all clients using server.connections 
+        /// instead of all player.connections in players, so this include clients without a player identity.
+        /// This method handles bools, there are multiple methods for different message types.
+        /// </summary>
+        /// <param name="packetType">What type of message it is</param>
+        /// <param name="message">What information shall be sent to client</param>
         public void SendMessageToAllClients(PacketType packetType, bool message)
         {
             NetOutgoingMessage outMsg = server.CreateMessage();
             outMsg.Write((byte)packetType);
+            // The zero represents that the message is a general message, like what position food is at.
             outMsg.Write((byte)0);
             outMsg.Write(message);
 
@@ -136,6 +174,15 @@ namespace MultiplayerGameLibrary
             Console.WriteLine($"Sent message to all clients with {packetType} containing {message}");
         }
 
+        /// <summary>
+        /// Similar to SendMessageToClient(player, packetType, message)
+        /// But this one sends the message to the server containing an identification which make the server be able to read which client this message is from.
+        /// This also doesn't have a channel in the end of the client.SendMessage() method. As well is it the client that sends this message instead of the server.
+        /// This method handles bools, there are multiple methods for different message types.
+        /// </summary>
+        /// <param name="playerID"></param>
+        /// <param name="packetType"></param>
+        /// <param name="message"></param>
         public void SendMessageToServer(byte playerID, PacketType packetType, byte message)
         {
             NetOutgoingMessage outMsg = client.CreateMessage();
@@ -143,6 +190,7 @@ namespace MultiplayerGameLibrary
             outMsg.Write((byte)packetType);
             outMsg.Write(message);
             client.SendMessage(outMsg, NetDeliveryMethod.ReliableOrdered);
+            // A method to flush the send buffer, this can be done automatically but for some reason I'm using it...
             client.FlushSendQueue();
             Console.WriteLine($"Sent message to server as player{playerID} with {packetType} containing {message}");
         }
@@ -157,20 +205,31 @@ namespace MultiplayerGameLibrary
             Console.WriteLine($"Sent message to server as player{playerID} with {packetType} containing {message}");
         }
 
+        /// <summary>
+        /// Reads the messages from the server, checks if the message contains something, 
+        /// looks at what messagetype it is and reads the message accordingly to that.
+        /// </summary>
+        /// <param name="gameClient">A parameter that is used to change variables in the client</param>
         public void ReadServerMessages(Client gameClient)
         {
+            // Create a message
             NetIncomingMessage incMsg;
+            // Read the incoming message, if there is something, read it.
             while ((incMsg = client.ReadMessage()) != null)
             {
+                // Switch messageType
                 switch (incMsg.MessageType)
                 {
                     case NetIncomingMessageType.Data:
                         {
+                            // In case of data, read the packettype and determine what the message contains
                             PacketType packetType = (PacketType)incMsg.ReadByte();
+                            // Read what player the message is about
                             byte playerID = (byte)incMsg.ReadByte();
 
 
-
+                            // Create a bool, if packettype is playeralive, read the bool message and write to console what the message contained. (Personally, this is a very bad code writing)
+                            // Do this with all other if methods...
                             bool boolMessage = false;
                             if(packetType == PacketType.PlayerAlive)
                             {
@@ -200,13 +259,17 @@ namespace MultiplayerGameLibrary
                             {
                                 if (packetType == PacketType.HeadPos && gameClient.gameActive && playerID == gameClient.players.Count)
                                 {
+                                    // If the client recieve a headposition from the server, and that the game is active, and that it is the last playerhead sent, 
+                                    // make it next turn in the client side of the game. This is here because it's uneccerary to have a dedicated packettype for "nextTurn".
                                     gameClient.turnManager.NextTurn();
                                 }
                                 pointMessage = new Point(incMsg.ReadInt32(), incMsg.ReadInt32());
                                 if (playerID == 0) Console.WriteLine($"Server sent {packetType} containing: {pointMessage}");
                                 else Console.WriteLine($"Server sent {packetType} regarding player{playerID} containing: {pointMessage}");
                             }
-
+                            
+                            // A switch for what code to run with corresponding packettype
+                            // All methods are in Client.cs
                             switch (packetType)
                             {
                                 case PacketType.GeneralData:
@@ -249,6 +312,8 @@ namespace MultiplayerGameLibrary
                             break;
                         }
                     #region Network
+                    // A switch for what code to run with corresponding packettype
+                    // All methods are in Client.cs
                     case NetIncomingMessageType.DebugMessage:
                         Console.WriteLine(incMsg.ReadString());
                         break;
@@ -279,10 +344,12 @@ namespace MultiplayerGameLibrary
                         break;
                 }
                 #endregion
+                // Recycle the message so that the garbage collector runs more effecient.
                 client.Recycle(incMsg);
             }
         }
 
+        // Read ReadServerMessages(gameClient), it's excactly the same code with the exception that it's the server that handles the messages and reading the incoming message.
         public void ReadClientMessages(Server gameServer)
         {
             NetIncomingMessage incMsg;

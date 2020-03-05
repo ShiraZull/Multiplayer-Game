@@ -222,16 +222,24 @@ namespace MultiplayerGameLibrary
             client.Disconnect(playerID + " is disconnecting");
         }
 
-
+        /// <summary>
+        /// Initialize a client on a separate thread
+        /// </summary>
         public void StartClient()
         {
+            // A configuration for the server before initializing, with an identifier that makes sure no other apps has acces to this game project.
             var config = new NetPeerConfiguration("MultiplayerGame2020");
+            // A setting that makes flushing the buffer a manual task.
             config.AutoFlushSendQueue = false;
+            // Create a client with the specified configuration
             client = new NetClient(config);
+            // Start on a separete thread
             client.Start();
 
+            // ip-address to connect to server, this is what you change if you want to connect to other computer
             string ip = "localhost";
             int port = 14242;
+            // Connect to the specefied adress
             client.Connect(ip, port);
         }
 

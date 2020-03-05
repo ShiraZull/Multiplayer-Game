@@ -33,29 +33,28 @@ namespace MultiplayerGameLibrary
             turnManager = new TurnManager(turnDelay, startCountdown);
         }
 
-
+        /// <summary>
+        /// Initialize a server on a separate thread
+        /// </summary>
         public void StartServer()
         {
+            // A configuration for the server before initializing, with an identifier that makes sure no other apps has acces to this game project.
+            // Sets the port to run on as well
             var config = new NetPeerConfiguration("MultiplayerGame2020") { Port = 14242 };
+            // A configuration that limits how many connections there can be, in this case how many players.
             config.MaximumConnections = 4;
+            // Create a server  with the specified configuration
             server = new NetServer(config);
+            // Start on a separete thread
             server.Start();
 
+            // Write the status of the server and what port it's running on.
             if (server.Status == NetPeerStatus.Running)
-                Console.WriteLine("Server has started... \nPort: " + config.Port);
+                Console.WriteLine($"Server has started... \nPort: " + config.Port);
             else
                 Console.WriteLine("Server unable to start...");
         }
-
-        public void LobbySetup()
-        {
-
-        }
-
-        public void LobbyRun()
-        {
-
-        }
+        
 
         public void GameSetup()
         {
